@@ -55,6 +55,10 @@ function logoUrlFor(company: string) {
 		format: 'png',
 		fallback: '404',
 	})
+	const replace: Record<string, string> = {
+		"Palantir": "Palantir Technologies"
+	};
+	company = replace[company] ?? company;
 	return `https://img.logo.dev/name/${encodeURIComponent(company)}?${params}`
 }
 

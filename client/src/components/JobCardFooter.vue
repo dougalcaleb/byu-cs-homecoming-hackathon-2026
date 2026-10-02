@@ -38,8 +38,21 @@ const props = defineProps<{
 	techStack: Tech[]
 }>()
 
+function formatIfDate(maybeDate?: string) {
+	if (!maybeDate) return maybeDate;
+	const date = new Date(maybeDate);
+	if (date instanceof Date && !isNaN(date.getTime())) {
+		return new Intl.DateTimeFormat('en-US', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric'
+		}).format(date);
+	}
+	return maybeDate;
+}
+
 const meta = computed(() =>
-	[props.job.location, props.job.employmentType, props.job.salary, props.job.postedAt].filter(Boolean).join(' · '),
+	[props.job.location, props.job.employmentType, props.job.salary, formatIfDate(props.job.postedAt)].filter(Boolean).join(' · '),
 )
 
 const showQualifications = computed(() => !!props.job.highlights.qualifications.length)
