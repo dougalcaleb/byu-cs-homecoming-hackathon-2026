@@ -93,7 +93,7 @@ const others = computed(() => props.resources.slice(1))
 					<path d="m6 9 6 6 6-6" />
 				</svg>
 			</button>
-			<AddSkillButton v-if="canAdd" class="mr-3 ml-1 shrink-0" :skill="name" :added="!!added" @add="emit('addSkill')" @remove="emit('removeSkill')" />
+			<AddSkillButton v-if="canAdd" class="mr-2 ml-2 shrink-0" :skill="name" :added="!!added" @add="emit('addSkill')" @remove="emit('removeSkill')" />
 		</h3>
 
 		<!-- Animates height by transitioning the grid row between 0fr and 1fr -->
