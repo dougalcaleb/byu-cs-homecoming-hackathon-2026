@@ -21,15 +21,13 @@
 				<!-- Grows out of the card's left edge (width = 2x the drag) so the pair ends up centered on the page -->
 				<div class="absolute inset-y-0 right-full overflow-hidden" :class="{ 'transition-[width] duration-200': !dragging }"
 					:style="{ width: Math.max(0, dragX * 2) + 'px' }">
-					<JobDetails :job="job" class="absolute inset-y-0 right-0 touch-pan-y border-l border-border bg-surface"
-						:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard"
-						@pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerEnd"
-						@pointercancel="onPointerEnd" />
+					<JobDetails :job="job" class="absolute inset-y-0 right-0 border-l border-border bg-surface"
+						:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" />
 				</div>
 
 				<div class="absolute inset-0 touch-pan-y select-none overflow-hidden border-x border-border bg-surface"
-					:class="{ 'pointer-events-none': liked }" @pointerdown="onPointerDown" @pointermove="onPointerMove"
-					@pointerup="onPointerEnd" @pointercancel="onPointerEnd">
+					@pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerEnd"
+					@pointercancel="onPointerEnd">
 					<img src="/handsome.png" :alt="`${job.company} cover image`" draggable="false"
 						class="pointer-events-none absolute inset-0 size-full object-cover object-top" />
 
@@ -105,8 +103,6 @@ const cardStyle = computed(() => ({
 }))
 
 function onPointerDown(event: PointerEvent) {
-	// On the details view, only empty space (the container itself, not its content) starts a swipe back
-	if (liked.value && event.target !== event.currentTarget) return
 	dragging.value = true
 	startX = event.clientX - dragX.value
 	;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
