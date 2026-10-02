@@ -314,10 +314,63 @@ function extractSkills(sections: Sections, rawText: string): string[] {
 	return Array.from(skillSet)
 }
 
+// ─── Bullet & Project Parsing Helpers ───
+
+const BULLET_START_REGEX =
+	/^[•\u2022\u2023\u25cf\u25cb\u25aa\u25a0\u2013\u2014\u2219\u00b7\uf0b7\uf0a7\u25e6*+\->~▪▫◦○●]\s*/
+
+const NUMBERED_BULLET_REGEX = /^(?:\d+[\.\)]|\([0-9a-zA-Z]\))\s*/
+
+const ACTION_VERBS =
+	/^(?:built|developed|engineered|designed|implemented|created|led|managed|collaborated|wrote|optimized|maintained|researched|assisted|spearheaded|automated|integrated|deployed|configured|architected|resolved|reduced|increased|improved|refactored|directed|oversaw|analyzed|coordinated|delivered|mentored|tested|debugged|facilitated|produced|evaluated|scheduled|trained|programmed|scaled|authored|conducted|established|launched|utilized|demonstrated|supported|achieved|provided)\b/i
+
+function isBulletLeader(line: string): boolean {
+	return BULLET_START_REGEX.test(line) || NUMBERED_BULLET_REGEX.test(line)
+}
+
+function stripBulletLeader(line: string): string {
+	return line
+		.replace(BULLET_START_REGEX, '')
+		.replace(NUMBERED_BULLET_REGEX, '')
+		.trim()
+}
+
+function isProjectTitleLine(line: string, currentProj: Partial<Project> | null): boolean {
+	const trimmed = line.trim()
+	if (!trimmed) return false
+
+	// If it starts with a bullet leader, it is NEVER a project title
+	if (isBulletLeader(trimmed)) return false
+
+	// If it starts with an action verb, it is an accomplishment bullet, NOT a project title
+	if (ACTION_VERBS.test(trimmed)) return false
+
+	// If it ends with period/semicolon and is a long sentence, it is a description/bullet, NOT a title
+	if (/[.;]$/.test(trimmed) && trimmed.length > 50) return false
+
+	// If no project started yet, this must be the title of the first project
+	if (!currentProj) return true
+
+	// If line has common project separators (| or — or [tech] or (tech))
+	if (/[|—]/.test(trimmed) || /\s-\s/.test(trimmed) || /\([^)]+\)|\[[^\]]+\]/.test(trimmed)) {
+		return true
+	}
+
+	// If line is short (< 45 chars), does NOT end with sentence punctuation, and looks like a title
+	if (trimmed.length < 45 && !/[.!?;,]$/.test(trimmed)) {
+		const words = trimmed.split(/\s+/)
+		if (words.length <= 6) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ─── Experience Extraction ───
 
 const DATE_REGEX =
-	/(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4}|\d{1,2}\/\d{4})\s*(?:-|–|—|to)\s*(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|\d{4}|\d{1,2}\/\d{4}|Present|Current)/i
+	/(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|(?:Spring|Summer|Fall|Winter)\s+\d{4}|\d{1,2}\/\d{4}|\b20\d{2}\b)\s*(?:-|–|—|to)\s*(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}|(?:Spring|Summer|Fall|Winter)\s+\d{4}|\d{1,2}\/\d{4}|\b20\d{2}\b|Present|Current)/i
 
 function extractExperience(sections: Sections): Experience[] {
 	const expLines = sections.experience
@@ -329,6 +382,7 @@ function extractExperience(sections: Sections): Experience[] {
 
 	function commitEntry() {
 		if (currentEntry && (currentEntry.title || currentEntry.company)) {
+			const cleanBullets = currentBullets.map((b) => b.trim()).filter((b) => b.length > 0)
 			entries.push({
 				id: crypto.randomUUID(),
 				title: currentEntry.title || 'Software Developer',
@@ -337,7 +391,7 @@ function extractExperience(sections: Sections): Experience[] {
 				startDate: currentEntry.startDate,
 				endDate: currentEntry.endDate,
 				isCurrent: currentEntry.isCurrent ?? false,
-				bullets: [...currentBullets],
+				bullets: cleanBullets.length ? cleanBullets : [''],
 			})
 		}
 		currentEntry = null
@@ -345,8 +399,9 @@ function extractExperience(sections: Sections): Experience[] {
 	}
 
 	for (let i = 0; i < expLines.length; i++) {
-		const line = expLines[i] ?? ''
-		const isBullet = /^[•\-*–▪\d+\.]\s+/.test(line)
+		const line = (expLines[i] ?? '').trim()
+		if (!line) continue
+
 		const dateMatch = line.match(DATE_REGEX)
 
 		if (dateMatch) {
@@ -367,11 +422,15 @@ function extractExperience(sections: Sections): Experience[] {
 			let company = ''
 
 			// If previous line or current line has title / company
-			const candidateLine = lineWithoutDate.length > 2
-				? lineWithoutDate
-				: (i > 0 && expLines[i - 1] && !expLines[i - 1]?.match(DATE_REGEX) && !/^[•\-*–▪]/.test(expLines[i - 1] ?? '')
-					? (expLines[i - 1]?.trim() ?? '')
-					: '')
+			const candidateLine =
+				lineWithoutDate.length > 2
+					? lineWithoutDate
+					: i > 0 &&
+						  expLines[i - 1] &&
+						  !expLines[i - 1]?.match(DATE_REGEX) &&
+						  !isBulletLeader(expLines[i - 1] ?? '')
+						? (expLines[i - 1]?.trim() ?? '')
+						: ''
 
 			if (candidateLine.includes('|')) {
 				const parts = candidateLine.split('|').map((p) => p.trim())
@@ -390,7 +449,14 @@ function extractExperience(sections: Sections): Experience[] {
 			}
 
 			// If company is still empty, look at adjacent line
-			if (!company && i > 0 && expLines[i - 1] && expLines[i - 1] !== candidateLine && !expLines[i - 1]?.match(DATE_REGEX) && !/^[•\-*–▪]/.test(expLines[i - 1] ?? '')) {
+			if (
+				!company &&
+				i > 0 &&
+				expLines[i - 1] &&
+				expLines[i - 1] !== candidateLine &&
+				!expLines[i - 1]?.match(DATE_REGEX) &&
+				!isBulletLeader(expLines[i - 1] ?? '')
+			) {
 				company = expLines[i - 1]?.trim() || ''
 			}
 
@@ -404,16 +470,25 @@ function extractExperience(sections: Sections): Experience[] {
 			continue
 		}
 
-		if (isBullet && currentEntry) {
-			const bulletText = line.replace(/^[•\-*–▪\d+\.]\s*/, '').trim()
-			if (bulletText) {
-				currentBullets.push(bulletText)
-			}
-		} else if (currentEntry && currentBullets.length > 0) {
-			// Append wrapped line to last bullet
+		if (!currentEntry) continue
+
+		const isExplicitBullet = isBulletLeader(line)
+		const cleaned = stripBulletLeader(line)
+		if (!cleaned) continue
+
+		if (isExplicitBullet || currentBullets.length === 0) {
+			currentBullets.push(cleaned)
+		} else {
 			const lastIdx = currentBullets.length - 1
-			if (currentBullets[lastIdx]) {
-				currentBullets[lastIdx] += ' ' + line
+			const lastBullet = currentBullets[lastIdx] ?? ''
+			const endsWithPunct = /[.!?;:]$/.test(lastBullet.trim())
+			const startsWithVerb = ACTION_VERBS.test(cleaned)
+			const startsWithCap = /^[A-Z]/.test(cleaned)
+
+			if ((endsWithPunct && startsWithCap) || startsWithVerb) {
+				currentBullets.push(cleaned)
+			} else {
+				currentBullets[lastIdx] = `${lastBullet} ${cleaned}`.trim()
 			}
 		}
 	}
@@ -442,18 +517,24 @@ function extractEducation(sections: Sections): Education[] {
 		}
 
 		// Degree line
-		const degMatch = line.match(/(Bachelor\s+(?:of\s+[A-Za-z]+)?|Master\s+(?:of\s+[A-Za-z]+)?|BS|BA|MS|MA|B\.S\.|B\.A\.|M\.S\.|Associate|Ph\.D\.|Doctor)/i)
+		const degMatch = line.match(
+			/(Bachelor\s+(?:of\s+[A-Za-z]+)?|Master\s+(?:of\s+[A-Za-z]+)?|BS|BA|MS|MA|B\.S\.|B\.A\.|M\.S\.|Associate|Ph\.D\.|Doctor)/i,
+		)
 		if (degMatch && !degree) {
 			degree = degMatch[0].trim()
 			// Extract field from same line if present, e.g. "Bachelor of Science in Computer Science"
-			const fieldMatch = line.match(/(?:in|of)\s+([A-Za-z\s]+(?:Science|Engineering|Systems|Business|Arts|Technology))/i)
+			const fieldMatch = line.match(
+				/(?:in|of)\s+([A-Za-z\s]+(?:Science|Engineering|Systems|Business|Arts|Technology))/i,
+			)
 			if (fieldMatch && fieldMatch[1]) {
 				field = fieldMatch[1].replace(/^(?:Science\s+in\s+)/i, '').trim()
 			}
 		}
 
 		// Graduation date
-		const gradMatch = line.match(/(?:Graduation|Expected|Graduated|Graduating)?\s*:?\s*([A-Za-z]+\s+\d{4}|\b(?:20\d{2})\b)/i)
+		const gradMatch = line.match(
+			/(?:Graduation|Expected|Graduated|Graduating)?\s*:?\s*([A-Za-z]+\s+\d{4}|\b(?:20\d{2})\b)/i,
+		)
 		if (gradMatch && !graduationDate) {
 			graduationDate = gradMatch[1]?.trim()
 		}
@@ -491,56 +572,114 @@ function extractProjects(sections: Sections): Project[] {
 
 	function commitProj() {
 		if (currentProj && currentProj.name) {
+			const cleanBullets = currentBullets.map((b) => b.trim()).filter((b) => b.length > 0)
+			let desc = currentProj.description?.trim() || ''
+
+			// If no explicit description was provided, use the bullets as description
+			if (!desc && cleanBullets.length > 0) {
+				desc = cleanBullets.join('\n')
+			}
+
 			projects.push({
 				id: crypto.randomUUID(),
 				name: currentProj.name,
-				description: currentProj.description,
+				description: desc || undefined,
 				technologies: currentProj.technologies || [],
-				bullets: [...currentBullets],
+				bullets: cleanBullets.length ? cleanBullets : (desc ? [desc] : ['']),
 			})
 		}
 		currentProj = null
 		currentBullets = []
 	}
 
-	for (const line of projLines) {
-		const isBullet = /^[•\-*–▪]\s+/.test(line)
+	for (let i = 0; i < projLines.length; i++) {
+		const rawLine = projLines[i] ?? ''
+		const line = rawLine.trim()
+		if (!line) continue
 
-		if (!isBullet && line.length < 80) {
-			// Project title candidate, e.g. "Gig Glide — Vue, Vite, Tailwind" or "Trailhead: Hiking Trip Planner"
+		// Check if this line is an actual new project title
+		if (isProjectTitleLine(line, currentProj)) {
 			commitProj()
 
 			let name = line
 			let description = ''
 			const technologies: string[] = []
 
-			if (line.includes(':')) {
-				const parts = line.split(':')
+			// Check for delimiters like "Project Name | Tech1, Tech2"
+			if (line.includes('|')) {
+				const parts = line.split('|')
 				name = parts[0]?.trim() || line
-				description = parts[1]?.trim() || ''
+				const techStr = parts[1]?.trim() || ''
+				technologies.push(...techStr.split(/[,/]/).map((s) => s.trim()).filter(Boolean))
 			} else if (line.includes('—') || line.includes(' - ')) {
 				const parts = line.split(/—|\s-\s/)
 				name = parts[0]?.trim() || line
 				description = parts[1]?.trim() || ''
+			} else if (line.includes(':')) {
+				const parts = line.split(':')
+				name = parts[0]?.trim() || line
+				description = parts.slice(1).join(':').trim()
 			}
 
-			// Extract technologies if formatted like (Vue, Firebase) or [Vue, TypeScript]
-			const techMatch = line.match(/\(([^)]+)\)|\[([^\]]+)\]/)
+			// Extract technologies in parentheses or brackets like "(Vue, Firebase)"
+			const techMatch = name.match(/\(([^)]+)\)|\[([^\]]+)\]/)
 			if (techMatch) {
 				const techStr = techMatch[1] || techMatch[2] || ''
 				technologies.push(...techStr.split(/[,|/]/).map((s) => s.trim()).filter(Boolean))
 				name = name.replace(/\([^)]+\)|\[[^\]]+\]/, '').trim()
 			}
 
+			// Also extract any recognized technologies from tech dictionary
+			for (const tech of TECH_DICTIONARY) {
+				if (
+					tech.pattern.test(rawLine) &&
+					!technologies.some((t) => t.toLowerCase() === tech.name.toLowerCase())
+				) {
+					technologies.push(tech.name)
+				}
+			}
+
 			currentProj = {
-				name,
+				name: name.replace(/[:\-–—]+$/, '').trim(),
 				description: description || undefined,
 				technologies,
 			}
-		} else if (isBullet && currentProj) {
-			const bullet = line.replace(/^[•\-*–▪]\s*/, '').trim()
-			if (bullet) {
-				currentBullets.push(bullet)
+			continue
+		}
+
+		// Otherwise, this line belongs to currentProj
+		if (!currentProj) {
+			currentProj = {
+				name: 'Project',
+				technologies: [],
+			}
+		}
+
+		const isExplicitBullet = isBulletLeader(line)
+		const cleaned = stripBulletLeader(line)
+		if (!cleaned) continue
+
+		if (isExplicitBullet) {
+			// Explicit bullet point
+			currentBullets.push(cleaned)
+		} else if (currentBullets.length === 0 && !currentProj.description && !ACTION_VERBS.test(cleaned)) {
+			// First non-bullet sentence right under project title is the overview description
+			currentProj.description = cleaned
+		} else if (currentBullets.length === 0) {
+			// First bullet under project
+			currentBullets.push(cleaned)
+		} else {
+			// Check if this should be a new bullet or continuation of the previous bullet
+			const lastIdx = currentBullets.length - 1
+			const lastBullet = currentBullets[lastIdx] ?? ''
+			const endsWithPunct = /[.!?;:]$/.test(lastBullet.trim())
+			const startsWithVerb = ACTION_VERBS.test(cleaned)
+			const startsWithCap = /^[A-Z]/.test(cleaned)
+
+			if ((endsWithPunct && startsWithCap) || startsWithVerb) {
+				currentBullets.push(cleaned)
+			} else {
+				currentBullets[lastIdx] = `${lastBullet} ${cleaned}`.trim()
 			}
 		}
 	}
