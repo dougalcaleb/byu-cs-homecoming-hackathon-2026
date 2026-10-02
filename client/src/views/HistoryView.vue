@@ -119,7 +119,7 @@ const matches: Record<Filter, (entry: HistoryEntry) => boolean> = {
 
 const filters: { value: Filter; label: string; hint: string }[] = [
 	{ value: 'all', label: 'All', hint: 'Everything you have swiped on' },
-	{ value: 'like', label: 'Liked', hint: 'Jobs you swiped right on' },
+	{ value: 'like', label: 'Viewed', hint: 'Jobs you swiped right on' },
 	{ value: 'pass', label: 'Passed', hint: 'Jobs you swiped left on' },
 	{ value: 'applied', label: 'Applied', hint: 'Jobs you applied to' },
 	{ value: 'notApplied', label: 'Not applied', hint: 'Jobs you liked and looked at, but did not apply to' },
