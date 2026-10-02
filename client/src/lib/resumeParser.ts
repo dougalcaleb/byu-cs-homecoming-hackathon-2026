@@ -319,7 +319,7 @@ function extractSkills(sections: Sections, rawText: string): string[] {
 const BULLET_START_REGEX =
 	/^[•\u2022\u2023\u25cf\u25cb\u25aa\u25a0\u2013\u2014\u2219\u00b7\uf0b7\uf0a7\u25e6*+\->~▪▫◦○●]\s*/
 
-const NUMBERED_BULLET_REGEX = /^(?:\d+[\.\)]|\([0-9a-zA-Z]\))\s*/
+const NUMBERED_BULLET_REGEX = /^(?:\d+[.)]|\([0-9a-zA-Z]\))\s*/
 
 const ACTION_VERBS =
 	/^(?:built|developed|engineered|designed|implemented|created|led|managed|collaborated|wrote|optimized|maintained|researched|assisted|spearheaded|automated|integrated|deployed|configured|architected|resolved|reduced|increased|improved|refactored|directed|oversaw|analyzed|coordinated|delivered|mentored|tested|debugged|facilitated|produced|evaluated|scheduled|trained|programmed|scaled|authored|conducted|established|launched|utilized|demonstrated|supported|achieved|provided)\b/i

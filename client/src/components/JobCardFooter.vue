@@ -57,8 +57,8 @@ const meta = computed(() =>
 
 const showQualifications = computed(() => !!props.job.highlights.qualifications.length)
 
-let descriptionExpanded = ref<boolean>(false);
-let qualificationsExpanded = ref<boolean>(false);
+const descriptionExpanded = ref<boolean>(false);
+const qualificationsExpanded = ref<boolean>(false);
 
 const scroller = ref<HTMLElement | null>(null)
 const scrolled = ref(false)
