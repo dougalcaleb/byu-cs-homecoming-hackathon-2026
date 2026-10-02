@@ -45,7 +45,9 @@ import { extractTechStack } from '@/lib/techStack'
 import { mockJobs, mockMatches } from '@/mocks'
 import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const jobsStore = useJobsStore()
 const matchesStore = useMatchesStore()
 
@@ -72,9 +74,10 @@ const SWIPE_THRESHOLD = 100 // px of horizontal drag needed to count as a swipe
 const viewport = ref<HTMLElement | null>(null)
 const offscreen = () => viewport.value?.clientWidth ?? window.innerWidth
 
-const dragX = ref(0)
+// Coming back from Ways to Improve (?details=<jobId>) reopens the details view
+const liked = ref(job.value !== undefined && route.query.details === job.value.id) // card swiped right; details are showing
+const dragX = ref(liked.value ? window.innerWidth : 0)
 const dragging = ref(false)
-const liked = ref(false) // card swiped right; details are showing
 let startX = 0
 
 const cardStyle = computed(() => ({

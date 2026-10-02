@@ -27,7 +27,25 @@ export const mockMatches = [
 		gaps: [
 			{
 				id: 'gap-1',
-				requirement: 'Automated testing experience',
+				skill: 'Unit testing',
+				category: 'concept',
+				requirement: 'Writing unit tests as part of everyday work',
+				jobQuote: 'write unit tests',
+				severity: 'major',
+			},
+			{
+				id: 'gap-3',
+				skill: 'Data structures and algorithms',
+				category: 'algorithms',
+				requirement: 'Passing a coding interview on data structures and algorithms',
+				jobQuote: 'The interview includes a data structures and algorithms round',
+				severity: 'major',
+			},
+			{
+				id: 'gap-2',
+				skill: 'Vitest',
+				category: 'tool',
+				requirement: 'Automated testing tools',
 				jobQuote: 'Familiarity with automated testing tools such as Vitest is preferred',
 				severity: 'minor',
 			},
@@ -74,9 +92,27 @@ export const mockMatches = [
 		gaps: [
 			{
 				id: 'gap-1',
-				requirement: 'Tableau or Power BI',
+				skill: 'Tableau',
+				category: 'tool',
+				requirement: 'A BI tool: Tableau or Power BI',
 				jobQuote: 'Experience with Tableau or Power BI is required',
 				severity: 'major',
+			},
+			{
+				id: 'gap-2',
+				skill: 'Power BI',
+				category: 'tool',
+				requirement: 'A BI tool: Tableau or Power BI',
+				jobQuote: 'Experience with Tableau or Power BI is required',
+				severity: 'major',
+			},
+			{
+				id: 'gap-3',
+				skill: 'Presenting data to stakeholders',
+				category: 'soft-skill',
+				requirement: 'Communicating findings to non-technical stakeholders',
+				jobQuote: 'build dashboards for stakeholders',
+				severity: 'minor',
 			},
 		],
 		tips: [

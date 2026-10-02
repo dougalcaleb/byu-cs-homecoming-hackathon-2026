@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 import { loadStored, persist } from '@/lib/storage'
 import type { AsyncState, JobPosting, Swipe, SwipeDirection } from '@/types'
 
-const JOBS_KEY = 'gig-glide:jobs'
+// Bump the version when the saved jobs should be discarded (e.g. the mock postings change)
+const JOBS_KEY = 'gig-glide:jobs:v2'
 const SWIPES_KEY = 'gig-glide:swipes'
 
 export const useJobsStore = defineStore('jobs', () => {

@@ -10,7 +10,7 @@ export const mockJobs = [
 		location: 'Lehi, UT',
 		isRemote: false,
 		description:
-			'We are looking for a Frontend Engineer Intern to build customer-facing features in Vue 3 and TypeScript. You will work with designers, write unit tests, and ship weekly. Experience with REST APIs is a plus. Familiarity with automated testing tools such as Vitest is preferred.',
+			'We are looking for a Frontend Engineer Intern to build customer-facing features in Vue 3 and TypeScript. You will work with designers, write unit tests, and ship weekly. Experience with REST APIs is a plus. Familiarity with automated testing tools such as Vitest is preferred. The interview includes a data structures and algorithms round.',
 		highlights: {
 			qualifications: ['Vue 3 and TypeScript', 'Experience with REST APIs is a plus'],
 			responsibilities: ['Build customer-facing features', 'Write unit tests'],

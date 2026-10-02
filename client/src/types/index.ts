@@ -129,11 +129,32 @@ export interface Highlight {
 	reason: string
 }
 
+// Decides which learning sites are worth linking. 'credential' covers things a course
+// cannot fix (a degree, years of experience, a clearance).
+export type GapCategory =
+	'language' | 'framework' | 'tool' | 'concept' | 'algorithms' | 'soft-skill' | 'credential'
+
 export interface Gap {
 	id: string
+	// Short searchable name ("Tableau", "Unit testing"); used to build learning links
+	skill: string
+	category?: GapCategory
 	requirement: string
 	jobQuote?: string
+	// 'major' = the posting requires it, 'minor' = nice to have
 	severity: 'minor' | 'major'
+}
+
+export type ResourceKind = 'course' | 'practice' | 'docs' | 'video'
+
+// An external link that teaches a gap's skill. URLs are always built by our code
+// (see lib/learningResources.ts), never taken from LLM output.
+export interface LearningResource {
+	provider: string
+	title: string
+	url: string
+	kind: ResourceKind
+	isFree: boolean
 }
 
 export type TipCategory = 'wording' | 'missing-skill' | 'quantify' | 'format' | 'keyword'

@@ -25,6 +25,10 @@
 				class="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-page">
 				Apply on {{ link.label }}
 			</a>
+			<RouterLink :to="{ name: 'improve', params: { jobId: job.id } }"
+				class="rounded-full border border-accent px-4 py-2 text-sm font-semibold text-accent">
+				Ways to improve
+			</RouterLink>
 		</div>
 	</div>
 </template>
