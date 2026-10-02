@@ -22,6 +22,12 @@ const KNOWN: [string, string, RegExp][] = [
 	['PyTorch', 'pytorch', /\bpytorch\b/i],
 ]
 
+// Looks up a single skill name ("Vitest"), e.g. to show its icon
+export function findTech(name: string): Tech | undefined {
+	const match = KNOWN.find(([, , pattern]) => pattern.test(name))
+	return match && { name: match[0], icon: match[1] }
+}
+
 export function extractTechStack(job: JobPosting): Tech[] {
 	const text = [job.title, job.description, ...job.highlights.qualifications].join(' ')
 	return KNOWN.filter(([, , pattern]) => pattern.test(text)).map(([name, icon]) => ({ name, icon }))

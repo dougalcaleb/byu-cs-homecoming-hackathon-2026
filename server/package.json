@@ -1,0 +1,25 @@
+{
+	"name": "gig-glide-server",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"start": "tsx src/index.ts",
+		"type-check": "tsc --noEmit",
+		"format": "prettier --write src/ ../shared/"
+	},
+	"dependencies": {
+		"@hono/node-server": "^2.1.3",
+		"hono": "^4.13.12"
+	},
+	"devDependencies": {
+		"@types/node": "^24.13.4",
+		"prettier": "3.9.6",
+		"tsx": "^4.23.15",
+		"typescript": "~6.0.0"
+	},
+	"engines": {
+		"node": "^22.18.0 || >=24.12.0"
+	}
+}

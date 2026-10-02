@@ -1,0 +1,12 @@
+{
+	"name": "gig-glide-root",
+	"private": true,
+	"scripts": {
+		"postinstall": "node scripts/install-all.mjs",
+		"dev": "concurrently --kill-others --names client,server --prefix-colors blue,green \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+		"type-check": "npm run type-check --prefix client && npm run type-check --prefix server"
+	},
+	"devDependencies": {
+		"concurrently": "^10.0.5"
+	}
+}

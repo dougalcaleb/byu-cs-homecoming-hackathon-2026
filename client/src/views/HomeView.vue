@@ -55,7 +55,9 @@ import { extractTechStack } from '@/lib/techStack'
 import { mockJobs, mockMatches } from '@/mocks'
 import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const jobsStore = useJobsStore()
 const matchesStore = useMatchesStore()
 
