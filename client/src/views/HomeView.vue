@@ -1,11 +1,16 @@
 <template>
 	<!-- Only this view is a phone-width column; the swipe hints sit in the negative space beside it -->
 	<div v-if="job" class="relative mx-auto flex w-full max-w-md flex-1">
+		<!-- Page background: a blurred, dimmed copy of the image -->
+		<img src="/handsome.png" alt="" aria-hidden="true"
+			class="pointer-events-none fixed inset-0 -z-10 size-full scale-110 object-cover blur-3xl" />
+		<div class="pointer-events-none fixed inset-0 -z-10 bg-black/80" />
+
 		<template v-if="!liked">
-			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap right-full mr-4 -translate-y-1/2 text-md font-medium text-neutral-500">
+			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap right-full mr-4 -translate-y-1/2 text-md font-medium text-neutral-300">
 				&lsaquo; Pass
 			</span>
-			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap left-full ml-4 -translate-y-1/2 text-md font-medium text-neutral-500">
+			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap left-full ml-4 -translate-y-1/2 text-md font-medium text-neutral-300">
 				Like &rsaquo;
 			</span>
 		</template>
