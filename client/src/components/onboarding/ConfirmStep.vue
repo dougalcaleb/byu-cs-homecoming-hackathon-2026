@@ -106,6 +106,18 @@ const emit = defineEmits<{ goToStep: [step: number] }>()
 							· {{ exp.startDate }} – {{ exp.isCurrent ? 'Present' : exp.endDate }}
 						</template>
 					</p>
+					<ul
+						v-if="exp.bullets.filter(Boolean).length"
+						class="mt-1.5 flex flex-col gap-1 pl-3 text-xs text-neutral-300"
+					>
+						<li
+							v-for="(b, bIdx) in exp.bullets.filter(Boolean)"
+							:key="bIdx"
+							class="list-disc leading-relaxed"
+						>
+							{{ b }}
+						</li>
+					</ul>
 				</div>
 			</div>
 		</div>
@@ -169,12 +181,32 @@ const emit = defineEmits<{ goToStep: [step: number] }>()
 					Edit
 				</button>
 			</div>
-			<div class="mt-2 flex flex-col gap-2">
+			<div class="mt-2 flex flex-col gap-3">
 				<div v-for="proj in projects" :key="proj.id">
-					<p class="text-sm font-medium text-neutral-100">{{ proj.name }}</p>
-					<p v-if="proj.description" class="text-xs text-muted">
+					<div class="flex items-baseline justify-between gap-2">
+						<p class="text-sm font-medium text-neutral-100">{{ proj.name }}</p>
+						<span
+							v-if="proj.technologies.length"
+							class="text-[10px] text-accent/70"
+						>
+							{{ proj.technologies.join(', ') }}
+						</span>
+					</div>
+					<p v-if="proj.description" class="mt-0.5 text-xs text-muted leading-relaxed">
 						{{ proj.description }}
 					</p>
+					<ul
+						v-if="proj.bullets.filter(Boolean).length"
+						class="mt-1 flex flex-col gap-0.5 pl-3 text-xs text-neutral-300"
+					>
+						<li
+							v-for="(b, bIdx) in proj.bullets.filter(Boolean)"
+							:key="bIdx"
+							class="list-disc leading-relaxed"
+						>
+							{{ b }}
+						</li>
+					</ul>
 				</div>
 			</div>
 		</div>

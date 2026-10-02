@@ -37,6 +37,11 @@ const router = createRouter({
 			component: () => import("../views/AboutView.vue"),
 		},
 		{
+			path: "/profile",
+			name: "profile",
+			component: () => import("../views/ProfileView.vue"),
+		},
+		{
 			path: "/improve/:jobId",
 			name: "improve",
 			component: () => import("../views/ImproveView.vue"),
@@ -44,19 +49,19 @@ const router = createRouter({
 	],
 });
 
-const PUBLIC_ROUTES = new Set(["splash", "login"]);
+const PUBLIC_ROUTES = new Set(["splash", "login", "onboarding"]);
 
 router.beforeEach((to) => {
 	const auth = useAuthStore();
 	const name = to.name as string;
 
-	// Unauthenticated users can only visit splash & login
+	// Unauthenticated users can only visit splash, login, & onboarding
 	if (!auth.isAuthenticated && !PUBLIC_ROUTES.has(name)) {
 		return { name: "splash" };
 	}
 
 	// Authenticated users hitting splash/login get redirected in
-	if (auth.isAuthenticated && PUBLIC_ROUTES.has(name)) {
+	if (auth.isAuthenticated && (name === "splash" || name === "login")) {
 		return { name: "home" };
 	}
 });

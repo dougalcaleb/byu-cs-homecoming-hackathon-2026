@@ -85,8 +85,8 @@ function removeProjectTech(proj: Project, index: number) {
 
 <template>
 	<div class="flex flex-col gap-8">
-		<!-- Summary -->
-		<div>
+		<!-- Summary (data-section lets the profile page's Edit links scroll to and highlight a block) -->
+		<div data-section="summary">
 			<h2 class="text-xl font-semibold text-neutral-100">Summary</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Brief professional summary</p>
 			<textarea
@@ -99,7 +99,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Skills -->
-		<div>
+		<div data-section="skills">
 			<h2 class="text-xl font-semibold text-neutral-100">Skills</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Technical and soft skills</p>
 
@@ -138,7 +138,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Projects -->
-		<div>
+		<div data-section="projects">
 			<div class="mb-3 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Projects</h2>
@@ -222,14 +222,15 @@ function removeProjectTech(proj: Project, index: number) {
 							<div class="flex flex-col gap-1.5">
 								<div v-for="(_, bI) in proj.bullets" :key="bI" class="flex gap-1.5">
 									<span class="mt-2 text-xs text-muted/40">•</span>
-									<input
+									<textarea
 										v-model="proj.bullets[bI]"
-										placeholder="Describe…"
-										class="min-w-0 flex-1 rounded-lg border border-border/40 bg-page/30 px-3 py-1.5 text-xs text-neutral-200 outline-none placeholder:text-muted/30 focus:border-accent/60"
+										placeholder="Describe accomplishment or feature…"
+										rows="2"
+										class="min-w-0 flex-1 resize-y rounded-lg border border-border/40 bg-page/30 px-3 py-1.5 text-xs text-neutral-200 outline-none placeholder:text-muted/30 focus:border-accent/60"
 									/>
 									<button
 										v-if="proj.bullets.length > 1"
-										class="mt-0.5 shrink-0 rounded p-0.5 text-muted/40 hover:text-red-400"
+										class="mt-1 shrink-0 rounded p-1 text-muted/40 hover:text-red-400"
 										@click="removeProjectBullet(proj, bI)"
 									>
 										<svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -253,7 +254,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Certifications -->
-		<div>
+		<div data-section="certifications">
 			<h2 class="text-xl font-semibold text-neutral-100">Certifications</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Professional certifications</p>
 

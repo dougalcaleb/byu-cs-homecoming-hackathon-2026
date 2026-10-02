@@ -53,8 +53,8 @@ function removeEducation(index: number) {
 
 <template>
 	<div class="flex flex-col gap-8">
-		<!-- Experience section -->
-		<div>
+		<!-- Experience section (data-section lets the profile page's Edit links scroll to and highlight a block) -->
+		<div data-section="experience">
 			<div class="mb-4 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Experience</h2>
@@ -141,11 +141,12 @@ function removeEducation(index: number) {
 									:key="bI"
 									class="flex gap-1.5"
 								>
-									<span class="mt-2.5 text-xs text-muted/40">•</span>
-									<input
+									<span class="mt-2 text-xs text-muted/40">•</span>
+									<textarea
 										v-model="exp.bullets[bI]"
 										placeholder="Describe what you did…"
-										class="min-w-0 flex-1 rounded-lg border border-border/40 bg-page/30 px-3 py-2 text-xs text-neutral-200 outline-none transition-colors placeholder:text-muted/30 focus:border-accent/60"
+										rows="2"
+										class="min-w-0 flex-1 resize-y rounded-lg border border-border/40 bg-page/30 px-3 py-2 text-xs text-neutral-200 outline-none transition-colors placeholder:text-muted/30 focus:border-accent/60"
 									/>
 									<button
 										v-if="exp.bullets.length > 1"
@@ -173,7 +174,7 @@ function removeEducation(index: number) {
 		</div>
 
 		<!-- Education section -->
-		<div>
+		<div data-section="education">
 			<div class="mb-4 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Education</h2>
