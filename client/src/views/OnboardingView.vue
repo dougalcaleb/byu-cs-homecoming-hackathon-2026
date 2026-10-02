@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useResumeStore } from '@/stores/resume'
+import { useAuthStore } from '@/stores/auth'
 import type { Contact, Experience, Education, Project, Resume } from '@/types'
 
 import StepIndicator from '@/components/onboarding/StepIndicator.vue'
@@ -35,69 +36,36 @@ const form = reactive({
 	certifications: [] as string[],
 })
 
-// Populate form with mock "parsed" data after upload
-function onFileUploaded(file: File) {
-	form.fileName = file.name
-	form.rawText = `[Parsed content of ${file.name}]`
+// Populate form with real ingested & parsed data after upload
+function onFileParsed(data: { fileName: string; rawText: string; parsed: Resume }) {
+	form.fileName = data.parsed.fileName
+	form.rawText = data.parsed.rawText
 
-	// Simulate parsed resume data
 	form.contact = {
-		name: 'Jane Doe',
-		email: 'jane.doe@email.com',
-		phone: '(555) 123-4567',
-		location: 'Provo, UT',
-		links: [
-			'https://linkedin.com/in/janedoe',
-			'https://github.com/janedoe',
-		],
+		name: data.parsed.contact.name || '',
+		email: data.parsed.contact.email || '',
+		phone: data.parsed.contact.phone || '',
+		location: data.parsed.contact.location || '',
+		links: [...data.parsed.contact.links],
 	}
-	form.summary =
-		'Motivated software developer with experience in full-stack web development and a passion for creating intuitive user experiences.'
-	form.skills = [
-		'JavaScript',
-		'TypeScript',
-		'Vue.js',
-		'React',
-		'Node.js',
-		'Python',
-		'SQL',
-		'Git',
-	]
-	form.experience = [
-		{
-			id: crypto.randomUUID(),
-			title: 'Software Engineer Intern',
-			company: 'Tech Startup',
-			location: 'Remote',
-			startDate: 'May 2025',
-			endDate: 'Aug 2025',
-			isCurrent: false,
-			bullets: [
-				'Built and maintained features using Vue.js and TypeScript',
-				'Collaborated with a team of 5 engineers on sprint deliverables',
-			],
-		},
-	]
-	form.education = [
-		{
-			id: crypto.randomUUID(),
-			school: 'Brigham Young University',
-			degree: 'Bachelor of Science',
-			field: 'Computer Science',
-			graduationDate: 'April 2027',
-			gpa: '3.7',
-		},
-	]
-	form.projects = [
-		{
-			id: crypto.randomUUID(),
-			name: 'Personal Portfolio',
-			description: 'A responsive portfolio website',
-			technologies: ['Vue.js', 'Tailwind CSS', 'Vite'],
-			bullets: ['Designed and built a responsive portfolio from scratch'],
-		},
-	]
-	form.certifications = []
+
+	form.summary = data.parsed.summary || ''
+	form.skills = [...data.parsed.skills]
+
+	form.experience = data.parsed.experience.map((e) => ({
+		...e,
+		bullets: e.bullets.length ? [...e.bullets] : [''],
+	}))
+
+	form.education = data.parsed.education.map((e) => ({ ...e }))
+
+	form.projects = data.parsed.projects.map((p) => ({
+		...p,
+		technologies: [...p.technologies],
+		bullets: p.bullets.length ? [...p.bullets] : [''],
+	}))
+
+	form.certifications = [...data.parsed.certifications]
 
 	step.value = 1
 }
@@ -118,7 +86,7 @@ function finish() {
 	// Build the full Resume object
 	const resume: Resume = {
 		id: crypto.randomUUID(),
-		fileName: form.fileName,
+		fileName: form.fileName || 'uploaded-resume.pdf',
 		uploadedAt: new Date().toISOString(),
 		rawText: form.rawText,
 		contact: { ...form.contact, links: [...form.contact.links] },
@@ -141,6 +109,12 @@ function finish() {
 	}
 
 	resumeStore.setResume(resume)
+
+	const auth = useAuthStore()
+	if (!auth.isAuthenticated) {
+		auth.signup(form.contact.email || 'demo@gigglide.com', 'demo-password')
+	}
+
 	router.push('/')
 }
 </script>
@@ -160,7 +134,7 @@ function finish() {
 			<div class="mx-auto w-full max-w-md px-6 py-8">
 				<Transition name="step" mode="out-in">
 					<!-- Step 0: Upload -->
-					<UploadStep v-if="step === 0" :key="0" @uploaded="onFileUploaded" />
+					<UploadStep v-if="step === 0" :key="0" @parsed="onFileParsed" />
 
 					<!-- Step 1: Contact -->
 					<ContactStep v-else-if="step === 1" :key="1" :contact="form.contact" />

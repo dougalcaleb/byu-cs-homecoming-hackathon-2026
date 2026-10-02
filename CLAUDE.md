@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Gig Glide** — a hackathon project (BYU CS Homecoming Hackathon 2026, prompt: "improve the job hunt"). A gamified job-hunt app: the user uploads a resume, swipes through job postings dating-app style, and for jobs they like the app analyzes the match and helps them tweak their resume/application to fit the posting as closely as possible.
 
-Layout: [client/](client/) (Vue frontend), [server/](server/) (Hono API: job sourcing), [shared/](shared/) (types used by both). Resume parsing and match analysis are not built yet; mock data in [client/src/mocks/](client/src/mocks/) stands in for them.
+Layout: [client/](client/) (Vue frontend), [server/](server/) (Hono API: job sourcing), [shared/](shared/) (types used by both). Client-side resume extraction and ingestion is built with PDF.js and Mammoth in [client/src/lib/resumeExtractor.ts](client/src/lib/resumeExtractor.ts) and [client/src/lib/resumeParser.ts](client/src/lib/resumeParser.ts); match analysis is planned, and mock data in [client/src/mocks/](client/src/mocks/) stands in for it. Routes include `/splash`, `/login`, `/onboarding`, `/`, `/about`, `/improve/:jobId`.
 
 ## Commands
 
