@@ -52,7 +52,7 @@ function logoUrlFor(company: string) {
 		token: TOKEN!,
 		size: '128',
 		retina: 'true',
-		format: 'png',
+		format: 'jpg',
 		fallback: '404',
 	})
 	const replace: Record<string, string> = {

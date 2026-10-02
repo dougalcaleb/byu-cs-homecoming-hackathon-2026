@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import type { RecommendationsRequest } from '../../shared/types'
 import { BOARDS } from './boards'
+import { jobsById } from './candidates'
 import { getPool } from './pool'
 import { activeSearchProvider } from './providers'
 import { indexInBackground, indexStatus } from './rank/embeddings'
@@ -29,6 +30,12 @@ app.get('/api/jobs/pool', async (c) => {
 	const byCompany: Record<string, number> = {}
 	for (const job of pool) byCompany[job.company] = (byCompany[job.company] ?? 0) + 1
 	return c.json({ total: pool.length, boards: BOARDS.length, byCompany })
+})
+
+// One posting by id, so a link to a job can be opened by someone who has never seen it in their deck
+app.get('/api/jobs/:id', async (c) => {
+	const job = (await jobsById()).get(c.req.param('id'))
+	return job ? c.json(job) : c.json({ error: 'Job not found' }, 404)
 })
 
 app.post('/api/jobs/recommendations', async (c) => {
