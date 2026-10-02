@@ -3,7 +3,7 @@ import type { MatchAnalysis } from '@/types'
 // Quotes must be exact substrings of mockResume.rawText and the matching job description
 export const mockMatches = [
 	{
-		jobId: 'job-1',
+		jobId: 'mock:job-1',
 		resumeId: 'resume-1',
 		score: 82,
 		summary:
@@ -68,7 +68,7 @@ export const mockMatches = [
 		generatedAt: '2026-10-02T16:05:00.000Z',
 	},
 	{
-		jobId: 'job-2',
+		jobId: 'mock:job-2',
 		resumeId: 'resume-1',
 		score: 58,
 		summary:

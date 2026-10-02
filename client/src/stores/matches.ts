@@ -4,7 +4,7 @@ import { loadStored, persist } from '@/lib/storage'
 import type { AsyncState, MatchAnalysis } from '@/types'
 
 // Bump the version when MatchAnalysis changes shape, so stale saved analyses are ignored
-const STORAGE_KEY = 'gig-glide:matches:v3'
+const STORAGE_KEY = 'gig-glide:matches:v4'
 
 export const useMatchesStore = defineStore('matches', () => {
 	// Keyed by job id; only finished analyses are restored from storage
