@@ -33,13 +33,12 @@
 
 					<div class="absolute inset-x-0 top-0 bg-linear-to-b from-black to-transparent px-4 pt-4 pb-12">
 						<h1 class="text-3xl font-semibold drop-shadow-xl">{{ job.company }}</h1>
-						<p class="text-sm text-neutral-200 drop-shadow">Hiring: {{ job.title }}</p>
+						<p class="text-sm text-neutral-200 drop-shadow">{{ job.location }}</p>
 						<p v-if="match !== null" class="text-sm font-medium text-accent-soft drop-shadow">Match {{ match }}%</p>
 					</div>
 
-					<div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black to-transparent px-4 pt-10 pb-4">
-						<TechStackList :items="techStack" />
-					</div>
+					<JobCardFooter :job="job" :tech-stack="techStack" :progress="progress" :max-height="cardHeight * 0.65"
+						:animate="!dragging" />
 				</div>
 			</div>
 		</section>
@@ -51,7 +50,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import JobDetails from '@/components/JobDetails.vue'
-import TechStackList from '@/components/TechStackList.vue'
+import JobCardFooter from '@/components/JobCardFooter.vue'
 import { extractTechStack } from '@/lib/techStack'
 import { mockJobs, mockMatches } from '@/mocks'
 import { useJobsStore } from '@/stores/jobs'
@@ -81,7 +80,11 @@ const SWIPE_THRESHOLD = 100 // px of horizontal drag needed to count as a swipe
 
 const viewport = ref<HTMLElement | null>(null)
 const cardWidth = ref(0)
-const updateWidth = () => (cardWidth.value = viewport.value?.clientWidth ?? 0)
+const cardHeight = ref(0)
+const updateWidth = () => {
+	cardWidth.value = viewport.value?.clientWidth ?? 0
+	cardHeight.value = viewport.value?.clientHeight ?? 0
+}
 onMounted(() => {
 	updateWidth()
 	window.addEventListener('resize', updateWidth)
@@ -95,6 +98,9 @@ const likedOffset = () => cardWidth.value / 2
 
 const dragX = ref(0)
 const dragging = ref(false)
+// How far the footer is raised: 0 at rest, 1 once swiped right
+const progress = computed(() => (likedOffset() ? Math.min(1, Math.max(0, dragX.value / likedOffset())) : 0))
+
 const liked = ref(false) // card swiped right; details are showing
 let startX = 0
 
