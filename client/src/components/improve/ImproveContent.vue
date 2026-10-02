@@ -38,7 +38,7 @@
 				<!-- Each pill jumps to its card -->
 				<ul v-if="items.length" class="mt-4 flex flex-wrap gap-1.5">
 					<li v-for="{ gap, tech } in items" :key="gap.id">
-						<!-- Required skills get a + (outside the jump button) that adds the skill to the profile -->
+						<!-- Every skill gets a + (outside the jump button) that adds it to the profile -->
 						<div
 							class="flex items-center rounded-full text-xs font-medium transition-colors"
 							:class="
@@ -150,10 +150,10 @@ const items = computed(() => {
 	}))
 })
 
-// Only required skills can be added, only when there is a resume to add them to, and only when the gap
-// names a short skill (not a whole requirement sentence)
+// Required and nice-to-have skills can both be added, but only when there is a resume to add them to and
+// the gap names a short skill (not a whole requirement sentence)
 function canAdd(gap: Gap) {
-	return gap.severity === 'major' && !!gap.skill && !!resumeStore.current
+	return !!gap.skill && !!resumeStore.current
 }
 
 const requiredCount = computed(
