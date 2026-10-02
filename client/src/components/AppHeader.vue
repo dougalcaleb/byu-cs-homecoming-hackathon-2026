@@ -7,10 +7,10 @@ const emit = defineEmits<{ menu: [] }>()
 <template>
   <!-- Mobile only; the sidebar is permanently visible on lg+ -->
   <header
-    class="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur lg:hidden"
+    class="retro-titlebar sticky top-0 z-10 flex h-14 items-center gap-3 px-4 lg:hidden"
   >
     <button
-      class="-ml-1 rounded-lg p-1.5 text-accent hover:bg-card"
+      class="retro-btn -ml-1 p-1"
       aria-label="Open menu"
       @click="emit('menu')"
     >

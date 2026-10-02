@@ -23,6 +23,13 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
 		<div class="lg:pl-64">
 			<div class="flex min-h-dvh w-full flex-col">
 				<AppHeader @menu="menuOpen = true" />
+				<div class="retro-marquee border-b-2 border-[#ff00ff] bg-black py-1 text-xs font-bold text-[#33ff33]"
+					aria-hidden="true">
+					<span>
+						★ Welcome to GigGlide!!! ★ The #1 job site on the Information Superhighway ★ Swipe right
+						to apply ★ Sign our guestbook ★ Don't forget to bookmark this page ★
+					</span>
+				</div>
 				<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
 					<RouterView />
 				</main>

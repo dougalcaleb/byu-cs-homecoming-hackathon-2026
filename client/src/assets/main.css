@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Experimental retro skin; delete this line to go back */
+@import './retro.css';
 
 @theme {
   --color-page: #121417;

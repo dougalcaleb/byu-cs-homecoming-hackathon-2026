@@ -1,0 +1,304 @@
+/* Experimental retro (late 90s / early 2000s) skin. Remove the import in main.css to turn it off.
+   Unlayered rules here beat Tailwind utilities, so keep selectors deliberate. */
+
+:root {
+	--color-page: #000033;
+	--color-surface: #0a0a4a;
+	--color-card: #181870;
+	--color-border: #a0a0d0;
+	--color-muted: #c0c0e8;
+	--color-accent: #00ffff;
+	--color-accent-soft: #ffff00;
+}
+
+@theme {
+	--font-sans: Verdana, Tahoma, Geneva, 'MS Sans Serif', sans-serif;
+	--font-mono: 'Courier New', Courier, monospace;
+
+	--radius-xs: 0;
+	--radius-sm: 0;
+	--radius-md: 0;
+	--radius-lg: 0;
+	--radius-xl: 0;
+	--radius-2xl: 0;
+	--radius-3xl: 0;
+	--radius-4xl: 0;
+
+	/* Hard drop shadows, no blur */
+	--shadow-sm: 2px 2px 0 #000;
+	--shadow: 3px 3px 0 #000;
+	--shadow-md: 4px 4px 0 #000;
+	--shadow-lg: 5px 5px 0 #000;
+	--shadow-xl: 6px 6px 0 #000;
+	--shadow-2xl: 8px 8px 0 #000;
+}
+
+/* ---------- Page ---------- */
+
+body {
+	/* Tiled starfield, GeoCities style */
+	background-color: #000022;
+	background-image:
+		radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+		radial-gradient(1px 1px at 120px 80px, #ffffaa, transparent),
+		radial-gradient(1.5px 1.5px at 60px 150px, #fff, transparent),
+		radial-gradient(1px 1px at 170px 190px, #aaffff, transparent),
+		radial-gradient(1px 1px at 90px 10px, #fff, transparent),
+		radial-gradient(2px 2px at 150px 130px, #fff, transparent);
+	background-size: 200px 200px;
+	-webkit-font-smoothing: auto;
+}
+
+h1,
+h2 {
+	font-family: 'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive;
+}
+
+h1 {
+	color: #ffff00;
+	text-shadow: 2px 2px 0 #ff00ff;
+}
+
+::selection {
+	background: #000080;
+	color: #fff;
+}
+
+a {
+	text-decoration-color: currentColor;
+}
+
+/* Choppy, low-framerate entrance */
+.rise {
+	animation-timing-function: steps(4) !important;
+}
+
+.rounded-full {
+	border-radius: 0;
+}
+
+/* ---------- Bevels ---------- */
+
+/* Every bordered box gets a 3D outset edge, like a <table border="1"> */
+.border,
+.border-2,
+.border-x,
+.border-y,
+.border-t,
+.border-b,
+.border-l,
+.border-r {
+	--tw-border-style: outset;
+	border-style: outset;
+}
+.border-dashed {
+	border-style: dashed;
+}
+.border {
+	border-width: 2px;
+}
+
+/* Primary buttons become Win98 push buttons */
+button.bg-accent,
+a.bg-accent,
+button.bg-accent-soft,
+a.bg-accent-soft,
+.retro-btn {
+	background: #c0c0c0 !important;
+	color: #000 !important;
+	font-family: Tahoma, 'MS Sans Serif', sans-serif;
+	font-weight: 700;
+	border: 2px solid;
+	border-color: #fff #404040 #404040 #fff;
+	box-shadow:
+		inset -1px -1px #808080,
+		inset 1px 1px #dfdfdf;
+	transform: none !important;
+}
+button.bg-accent:active,
+a.bg-accent:active,
+button.bg-accent-soft:active,
+a.bg-accent-soft:active,
+.retro-btn:active,
+.retro-btn.retro-pressed {
+	border-color: #404040 #fff #fff #404040;
+	box-shadow: inset 1px 1px #808080;
+	background-image: repeating-conic-gradient(#c0c0c0 0 25%, #d8d8d8 0 50%) !important;
+	background-size: 2px 2px !important;
+}
+button.bg-accent:focus-visible,
+.retro-btn:focus-visible {
+	outline: 1px dotted #000;
+	outline-offset: -5px;
+}
+
+/* Text fields: white, sunken */
+input:not([type]),
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='tel'],
+input[type='url'],
+textarea,
+select {
+	background: #fff !important;
+	color: #000 !important;
+	font-family: 'Courier New', Courier, monospace;
+	border: 2px solid !important;
+	border-color: #808080 #fff #fff #808080 !important;
+	box-shadow: inset 1px 1px #404040;
+}
+input::placeholder,
+textarea::placeholder {
+	color: #808080 !important;
+}
+
+/* ---------- Scrollbars (Chromium) ---------- */
+
+::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+}
+::-webkit-scrollbar-track {
+	background-image: repeating-conic-gradient(#c0c0c0 0 25%, #fff 0 50%);
+	background-size: 2px 2px;
+}
+::-webkit-scrollbar-thumb {
+	background: #c0c0c0;
+	border: 2px solid;
+	border-color: #fff #404040 #404040 #fff;
+	box-shadow: inset -1px -1px #808080;
+}
+::-webkit-scrollbar-button:single-button {
+	display: block;
+	height: 16px;
+	width: 16px;
+	background-color: #c0c0c0;
+	border: 2px solid;
+	border-color: #fff #404040 #404040 #fff;
+}
+::-webkit-scrollbar-corner {
+	background: #c0c0c0;
+}
+
+/* ---------- Window chrome ---------- */
+
+.retro-window {
+	background: #c0c0c0;
+	color: #000;
+	font-family: Tahoma, 'MS Sans Serif', sans-serif;
+	border: 2px solid;
+	border-color: #dfdfdf #000 #000 #dfdfdf;
+	box-shadow:
+		inset -1px -1px #808080,
+		inset 1px 1px #fff;
+}
+
+.retro-titlebar {
+	background: linear-gradient(90deg, #000080, #1084d0) !important;
+	color: #fff;
+	font-family: Tahoma, 'MS Sans Serif', sans-serif;
+	font-weight: 700;
+	backdrop-filter: none !important;
+}
+
+.retro-title-btn {
+	display: inline-flex;
+	width: 16px;
+	height: 14px;
+	align-items: center;
+	justify-content: center;
+	background: #c0c0c0;
+	color: #000;
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 1;
+	border: 1px solid;
+	border-color: #fff #000 #000 #fff;
+	box-shadow: inset -1px -1px #808080;
+}
+
+.retro-sunken {
+	border: 2px solid;
+	border-color: #808080 #fff #fff #808080;
+}
+
+/* ---------- GeoCities flair ---------- */
+
+.retro-marquee {
+	overflow: hidden;
+	white-space: nowrap;
+}
+.retro-marquee > span {
+	display: inline-block;
+	padding-left: 100%;
+	animation: retro-marquee 18s linear infinite;
+}
+@keyframes retro-marquee {
+	to {
+		transform: translateX(-100%);
+	}
+}
+
+.retro-blink {
+	animation: retro-blink 1s steps(1) infinite;
+}
+@keyframes retro-blink {
+	50% {
+		visibility: hidden;
+	}
+}
+
+.retro-rainbow {
+	background: linear-gradient(90deg, #f00, #f80, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+	background-size: 200% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: retro-rainbow 3s linear infinite;
+}
+@keyframes retro-rainbow {
+	to {
+		background-position: 200% 0;
+	}
+}
+
+.retro-construction {
+	background: repeating-linear-gradient(-45deg, #ffcc00 0 10px, #000 10px 20px);
+}
+
+.retro-counter {
+	font-family: 'Courier New', Courier, monospace;
+	background: #000;
+	color: #33ff33;
+	letter-spacing: 3px;
+	text-shadow: 0 0 4px #33ff33;
+}
+
+/* 88x31 web badges */
+.retro-badge {
+	display: inline-flex;
+	width: 88px;
+	height: 31px;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	font-family: Verdana, sans-serif;
+	font-size: 8px;
+	font-weight: 700;
+	line-height: 1.1;
+	border: 1px solid #000;
+	box-shadow: inset 1px 1px #fff8, inset -1px -1px #0008;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.retro-marquee > span,
+	.retro-blink,
+	.retro-rainbow {
+		animation: none;
+	}
+	.retro-marquee > span {
+		padding-left: 0;
+	}
+}
