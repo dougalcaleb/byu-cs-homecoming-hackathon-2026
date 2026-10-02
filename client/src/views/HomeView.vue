@@ -1,6 +1,8 @@
 <template>
 	<!-- Only this view is a phone-width column; the swipe hints sit in the negative space beside it -->
-	<div v-if="job" class="relative mx-auto flex w-full max-w-md flex-1">
+	<div v-if="job" ref="column" class="relative mx-auto flex w-full max-w-md flex-1">
+		<HeartBubbles :column="column" />
+
 		<!-- Page background: a blurred, dimmed copy of the image -->
 		<img src="/handsome.png" alt="" aria-hidden="true"
 			class="pointer-events-none fixed inset-0 -z-10 size-full scale-110 object-cover blur-3xl" />
@@ -50,6 +52,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import JobDetails from '@/components/JobDetails.vue'
+import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCardFooter from '@/components/JobCardFooter.vue'
 import { extractTechStack } from '@/lib/techStack'
 import { mockJobs, mockMatches } from '@/mocks'
@@ -80,6 +83,7 @@ const match = computed(() => {
 
 const SWIPE_THRESHOLD = 100 // px of horizontal drag needed to count as a swipe
 
+const column = ref<HTMLElement | null>(null)
 const viewport = ref<HTMLElement | null>(null)
 const cardWidth = ref(0)
 const cardHeight = ref(0)
