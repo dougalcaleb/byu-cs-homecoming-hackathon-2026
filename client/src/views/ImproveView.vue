@@ -15,10 +15,10 @@
 			<p v-if="job" class="mt-0.5 text-sm text-muted">{{ job.title }} at {{ job.company }}</p>
 		</header>
 
-		<p v-if="state.status === 'loading'" class="text-sm text-muted">
+		<p v-if="!analysis && state.status === 'loading'" class="text-sm text-muted">
 			Analyzing this posting&hellip;
 		</p>
-		<p v-else-if="state.status === 'error'" class="text-sm text-muted">
+		<p v-else-if="!analysis && state.status === 'error'" class="text-sm text-muted">
 			Couldn't analyze this posting: {{ state.error }}
 		</p>
 		<p v-else-if="!analysis" class="text-sm text-muted">No analysis for this job yet.</p>
@@ -97,19 +97,34 @@ import { computed, nextTick, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import GapCard from '@/components/improve/GapCard.vue'
 import ScoreRing from '@/components/improve/ScoreRing.vue'
+import { analysisFromRecommendation } from '@/lib/gapAnalysis'
 import { resourcesForGap } from '@/lib/learningResources'
 import { findTech } from '@/lib/techStack'
 import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
+import { useResumeStore } from '@/stores/resume'
 
 const route = useRoute()
 const jobsStore = useJobsStore()
 const matchesStore = useMatchesStore()
+const resumeStore = useResumeStore()
 
 const jobId = computed(() => String(route.params.jobId))
 const job = computed(() => jobsStore.jobById(jobId.value))
 const state = computed(() => matchesStore.analysisFor(jobId.value))
-const analysis = computed(() => (state.value.status === 'ready' ? state.value.data : null))
+// Until real match analysis exists, jobs from the ranking API fall back to their missing skills
+const analysis = computed(() => {
+	if (state.value.status === 'ready') return state.value.data
+	const recommendation = jobsStore.recommendations[jobId.value]
+	if (!recommendation) return null
+	return analysisFromRecommendation(recommendation, resumeStore.current?.id ?? '')
+})
+
+// The ranking API's skill tags have checked icon slugs; techStack's older list is the fallback
+function apiTech(skill: string) {
+	const tag = jobsStore.recommendations[jobId.value]?.missingSkills.find((t) => t.name === skill)
+	return tag?.icon ? { name: tag.name, icon: tag.icon } : undefined
+}
 
 // Required gaps first; `order` staggers the entrance animation
 const items = computed(() => {
@@ -121,7 +136,7 @@ const items = computed(() => {
 	return sorted.map((gap, index) => ({
 		gap,
 		order: index + 1,
-		tech: findTech(gap.skill || gap.requirement),
+		tech: apiTech(gap.skill) ?? findTech(gap.skill || gap.requirement),
 		resources: resourcesForGap(gap),
 	}))
 })
