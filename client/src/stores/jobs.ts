@@ -4,7 +4,7 @@ import { loadStored, persist } from '@/lib/storage'
 import type { AsyncState, JobPosting, Swipe, SwipeDirection } from '@/types'
 
 // Bump the version when the saved jobs should be discarded (e.g. the mock postings change)
-const JOBS_KEY = 'gig-glide:jobs:v3'
+const JOBS_KEY = 'gig-glide:jobs:v4'
 const SWIPES_KEY = 'gig-glide:swipes'
 
 export const useJobsStore = defineStore('jobs', () => {

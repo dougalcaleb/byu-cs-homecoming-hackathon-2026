@@ -162,4 +162,23 @@ export const mockJobs = [
 		source: 'Company website',
 		applyLinks: [{ label: 'Canyon Labs', url: 'https://example.com/jobs/job-10' }],
 	},
+	{
+		id: 'mock:job-11',
+		provider: 'mock',
+		title: 'DevOps Engineer',
+		company: 'Beehive Cloud',
+		location: 'Provo, UT',
+		description:
+			'Own our CI/CD pipelines and keep our services healthy. You will containerize apps with Docker, manage infrastructure on AWS, and automate deploys with Git-based workflows. Scripting in Python or Node is a plus, and you will be on call one week in six.',
+		highlights: {
+			qualifications: ['Docker and AWS', 'Scripting in Python or Node'],
+			responsibilities: ['Maintain CI/CD pipelines', 'Automate deploys'],
+			benefits: ['Hybrid schedule', 'Learning stipend'],
+		},
+		employmentType: 'Full-time',
+		salary: '$85K–$105K a year',
+		postedAt: daysAgo(1),
+		source: 'Company website',
+		applyLinks: [{ label: 'Beehive Cloud', url: 'https://example.com/jobs/job-11' }],
+	},
 ] satisfies JobPosting[]
