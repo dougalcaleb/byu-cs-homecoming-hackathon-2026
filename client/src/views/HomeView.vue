@@ -34,8 +34,7 @@
 							:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" />
 					</div>
 
-					<JobCard data-current :job="job" class="left-0" :progress="progress"
-						:max-footer-height="cardHeight * 0.65" :animate="!dragging" />
+					<JobCard data-current :job="job" class="left-0" />
 
 					<!-- Prerendered next job, directly right of the current card -->
 					<JobCard v-if="nextJob" :job="nextJob" class="left-full" :class="{ invisible: side === 'right' }"
@@ -131,11 +130,9 @@ watch(
 const column = ref<HTMLElement | null>(null)
 const viewport = ref<HTMLElement | null>(null)
 const cardWidth = ref(0)
-const cardHeight = ref(0)
 
 const updateSize = () => {
 	cardWidth.value = viewport.value?.clientWidth ?? 0
-	cardHeight.value = viewport.value?.clientHeight ?? 0
 }
 
 // Track the section's size for as long as it exists (a single measurement on mount can run before styles apply)
@@ -164,9 +161,6 @@ const dragging = ref(false)
 // Card swiped right; details are showing
 const liked = ref(false)
 
-// How far the footer is raised: 0 at rest, 1 once swiped right
-const progress = computed(() => (likedOffset() ? Math.min(1, Math.max(0, dragX.value / likedOffset())) : 0))
-
 // Which way the strip last moved. Lags behind dragX by one transition, so the carousel clip and the
 // hidden next card don't switch mid-animation.
 const side = ref<'left' | 'right' | 'none'>('none')
@@ -178,7 +172,12 @@ watch(dragX, (value) => {
 	else sideTimer = setTimeout(() => (side.value = 'none'), 250)
 })
 
+// Pointer movement (px) before a press counts as a drag. Below it, the press is a click on whatever is under it.
+const DRAG_SLOP = 6
+
 let startX = 0
+let downX = 0
+let captured = false
 let pointerActive = false
 
 // A pass is committed once the carousel has finished sliding. A new drag can start before that happens, so the
@@ -209,12 +208,25 @@ function onPointerDown(event: PointerEvent) {
 	finishPass()
 	pointerActive = true
 	dragging.value = true
+	captured = false
+	downX = event.clientX
 	startX = event.clientX - dragX.value
-	;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+	// The pointer is only captured once it moves (see onPointerMove), so a plain click still reaches the
+	// button or link under it. If it is released before then, the section never hears about it, so also
+	// listen on the window.
+	window.addEventListener('pointerup', onPointerEnd)
+	window.addEventListener('pointercancel', onPointerEnd)
 }
 
 function onPointerMove(event: PointerEvent) {
 	if (!dragging.value) return
+	if (!captured) {
+		if (Math.abs(event.clientX - downX) < DRAG_SLOP) return
+		// It is a drag, not a click: from here on the section gets every event, wherever the pointer goes
+		;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+		captured = true
+		startX = event.clientX - dragX.value
+	}
 	const x = event.clientX - startX
 	// Details open: the card can only be dragged back in (left). Otherwise: at most one card-width either way.
 	dragX.value = liked.value
@@ -223,6 +235,8 @@ function onPointerMove(event: PointerEvent) {
 }
 
 function onPointerEnd() {
+	window.removeEventListener('pointerup', onPointerEnd)
+	window.removeEventListener('pointercancel', onPointerEnd)
 	pointerActive = false
 	if (!dragging.value) return
 	dragging.value = false

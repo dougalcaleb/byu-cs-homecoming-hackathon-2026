@@ -1,7 +1,7 @@
 <template>
 	<!-- Cover art: the company's logo on a gradient from its brand color, or a monogram until a logo is available -->
-	<div class="absolute inset-0 flex items-start justify-center pt-[26%]" :style="{ background: coverBackground(job.company) }">
-		<div v-if="logo" class="flex size-32 items-center justify-center rounded-3xl bg-white p-4 shadow-2xl">
+	<div class="absolute inset-0 flex items-start justify-center pt-28" :style="{ background: coverBackground(job.company) }">
+		<div v-if="logo" class="flex size-32 items-center justify-center bg-white shadow-2xl">
 			<img :src="logo" :alt="`${job.company} logo`" draggable="false" class="size-full object-contain" />
 		</div>
 		<div v-else role="img" :aria-label="`${job.company} logo`"

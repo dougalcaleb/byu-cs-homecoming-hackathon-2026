@@ -9,8 +9,7 @@
 			<p v-if="match !== null" class="text-sm font-medium text-accent-soft drop-shadow">Match {{ match }}%</p>
 		</div>
 
-		<JobCardFooter :job="job" :tech-stack="techStack" :progress="progress" :max-height="maxFooterHeight"
-			:animate="animate" />
+		<JobCardFooter :job="job" :tech-stack="techStack" />
 	</div>
 </template>
 
@@ -24,17 +23,7 @@ import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
 import type { JobPosting } from '@/types'
 
-const props = withDefaults(
-	defineProps<{
-		job: JobPosting
-		/** How far the footer is raised, 0 (resting) to 1 */
-		progress?: number
-		/** Height in px the footer is capped at */
-		maxFooterHeight?: number
-		animate?: boolean
-	}>(),
-	{ progress: 0, maxFooterHeight: 0, animate: false },
-)
+const props = defineProps<{ job: JobPosting }>()
 
 const matchesStore = useMatchesStore()
 const jobsStore = useJobsStore()
