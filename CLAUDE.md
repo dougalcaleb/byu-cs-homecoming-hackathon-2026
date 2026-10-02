@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Gig Glide** — a hackathon project (BYU CS Homecoming Hackathon 2026, prompt: "improve the job hunt"). A gamified job-hunt app: the user uploads a resume, swipes through job postings dating-app style, and for jobs they like the app analyzes the match and helps them tweak their resume/application to fit the posting as closely as possible.
 
-Layout: [client/](client/) (Vue frontend), [server/](server/) (Hono API: job sourcing), [shared/](shared/) (types used by both). Client-side resume extraction and ingestion is built with PDF.js and Mammoth in [client/src/lib/resumeExtractor.ts](client/src/lib/resumeExtractor.ts) and [client/src/lib/resumeParser.ts](client/src/lib/resumeParser.ts); match analysis is planned, and mock data in [client/src/mocks/](client/src/mocks/) stands in for it. Routes include `/splash`, `/login`, `/onboarding`, `/`, `/profile`, `/about`, `/improve/:jobId`.
+Layout: [client/](client/) (Vue frontend), [server/](server/) (Hono API: job sourcing and ML ranking), [shared/](shared/) (types used by both). Client-side resume extraction and ingestion is built with PDF.js and Mammoth in [client/src/lib/resumeExtractor.ts](client/src/lib/resumeExtractor.ts) and [client/src/lib/resumeParser.ts](client/src/lib/resumeParser.ts); match analysis is planned, and mock data in [client/src/mocks/](client/src/mocks/) stands in for it. Routes include `/splash`, `/login`, `/onboarding`, `/`, `/profile`, `/about`, `/improve/:jobId`.
 
 ## Commands
 
@@ -30,6 +30,7 @@ npm run format       # prettier on src/
 # server/
 npm run dev          # tsx watch, http://localhost:8787
 npm run type-check   # tsc --noEmit (also checks shared/)
+npm run simulate     # offline eval of the ranking model with simulated swipers
 npm run format       # prettier on src/ and ../shared/
 ```
 
@@ -43,7 +44,7 @@ Gotchas:
 
 Client: Vue 3 (`<script setup lang="ts">`), Vite, Pinia (setup-style stores), Vue Router, Tailwind CSS v4 (via `@tailwindcss/vite`, no config file). `@/` aliases `client/src/`.
 
-Server: Hono on `@hono/node-server`, run directly from TypeScript with `tsx` (no build step). No other runtime deps; HTML handling is hand-rolled.
+Server: Hono on `@hono/node-server`, run directly from TypeScript with `tsx` (no build step). `@huggingface/transformers` runs a local embedding model (ONNX; ~500MB of node_modules, model downloaded to `server/.cache/models/` on first run). HTML handling is hand-rolled.
 
 Style (both): tabs, no semicolons, single quotes, 100-char lines (root `.editorconfig` + `.prettierrc.json`).
 
@@ -63,13 +64,23 @@ Style (both): tabs, no semicolons, single quotes, 100-char lines (root `.editorc
 
 **Job sourcing (server).** Two kinds of sources, each with a converter in [server/src/providers/](server/src/providers/) that maps raw API data to `JobPosting`:
 - *ATS job boards* (Greenhouse, Lever, Ashby): free, keyless, full descriptions, fetched per company. [boards.ts](server/src/boards.ts) lists the companies (Utah-heavy). [pool.ts](server/src/pool.ts) loads every board into an in-memory pool (~9k jobs, ~5s cold).
-- *Search APIs* (JSearch, then SerpApi; first one with a key wins): quota-limited, only used by [candidates.ts](server/src/candidates.ts) when the pool yields too few matches. JSearch field names are from its docs and haven't been checked against a live response.
+- *Search APIs* (JSearch, then SerpApi; first one with a key wins): quota-limited, only used by [candidates.ts](server/src/candidates.ts) when retrieval yields too few candidates. JSearch field names are from its docs and haven't been checked against a live response.
 
 `JobPosting.id` is `provider:…` namespaced (`greenhouse:{token}:{id}`, `serpapi:{id}`, mock jobs use `mock:job-N`). `description` is always plain text: HTML is converted by [html.ts](server/src/providers/html.ts), which also builds `highlights` from bullet lists under recognizable headings (`classifyHeading`). `postedAt` is ISO.
 
 [cache.ts](server/src/cache.ts) caches **raw** responses on disk in `server/.cache/` (boards 6h, searches 24h), so converter changes apply without refetching, and stale data is served if the network fails.
 
-`POST /api/jobs/candidates` (`CandidatesRequest` → `CandidatesResponse`) is the coarse candidate-generation step: keyword/title relevance from `SearchProfile`, seniority filter, location demotion (assumes US users), dedupe by title+company. Fine ranking (skill overlap, swipe feedback) is planned as a separate step after it. The client calls it through [api.ts](client/src/lib/api.ts). `GET /api/jobs/pool` shows pool counts for debugging.
+**Ranking (server, [server/src/rank/](server/src/rank/)).** `POST /api/jobs/recommendations` (`RecommendationsRequest` → `RecommendationsResponse`; client helper `fetchRecommendations` in [api.ts](client/src/lib/api.ts)) returns `Recommendation`s: the job, a 0–100 `score` (predicted chance of a right swipe), matched/missing `SkillTag`s (with Simple Icons slugs) and short `reasons`, plus a `TasteSummary`. Stateless: the client sends the full swipe history every time and the model is retrained from it per request. Pipeline in [recommend.ts](server/src/rank/recommend.ts):
+1. *Train*: replay swipes in order through [model.ts](server/src/rank/model.ts), an online logistic regression (SGD, L2 pull toward hand-set `PRIOR_WEIGHTS` that handle cold start). Liked/passed job embeddings are also averaged into taste vectors.
+2. *Retrieve* ([candidates.ts](server/src/candidates.ts)): union of keyword top-150 and embedding top-150 from the pool. Hard filters (`isOutOfReach`): senior titles for intern/entry users, jobs only open outside the US.
+3. *Score*: [features.ts](server/src/rank/features.ts) builds a sparse vector per job: resume↔job semantic similarity, skill coverage, title match, seniority fit, reachability, recency, similarity to liked/passed taste vectors, plus `skill:*` / `workplace:*` one-hots whose weights are learned only from swipes.
+4. *Order*: dedupe by title+company, then MMR diversification over embeddings with a same-company penalty. Reasons come from the largest feature contributions.
+
+[embeddings.ts](server/src/rank/embeddings.ts): local `all-MiniLM-L6-v2` (384-d, normalized). The whole pool is embedded in the background at startup (~4 min the first time) and cached in `server/.cache/job-embeddings.*`; requests embed any missing candidates on demand, so they are slow until indexing finishes (`GET /api/health` shows progress). All model calls go through one queue.
+
+[skills.ts](server/src/rank/skills.ts) is the skill dictionary (~130 skills, aliases, icon slugs) with a single-pass n-gram matcher. Skills whose name is a common word (`ambiguous: true`: Go, C, R, Excel, Spring, Swift) match only via longer aliases; a company's own name is never counted as a skill of its postings. All icon slugs were checked against cdn.simpleicons.org. The client's [techStack.ts](client/src/lib/techStack.ts) is an older, smaller list (and its `amazonwebservices`/`tableau` slugs 404); prefer the server's `SkillTag`s once the UI uses recommendations.
+
+`GET /api/jobs/pool` shows pool counts for debugging.
 
 **Layout.** [App.vue](client/src/App.vue) renders a sidebar (drawer on mobile, fixed on `lg+`) and lets content fill the width beside it; each view sets its own width (e.g. `mx-auto max-w-2xl`). Theme colors are Tailwind `@theme` tokens in [main.css](client/src/assets/main.css) (`page`, `surface`, `card`, `border`, `muted`, `accent`, `accent-soft`); the app is dark-only. [HomeView.vue](client/src/views/HomeView.vue) is the swipe deck, a phone-width column showing the first unswiped job; a right swipe slides the card away to reveal [JobDetails.vue](client/src/components/JobDetails.vue) underneath. Swipes are still local state there (the deck does not advance and nothing is written to the `jobs` store yet), and it seeds the stores from mocks. The `rise` class in `main.css` is the shared entrance animation (stagger with `animation-delay`).
 

@@ -1,5 +1,5 @@
 {
-	"include": ["src/**/*.ts", "../shared/**/*.ts"],
+	"include": ["src/**/*.ts", "scripts/**/*.ts", "../shared/**/*.ts"],
 	"compilerOptions": {
 		"target": "ES2023",
 		"lib": ["ES2023"],

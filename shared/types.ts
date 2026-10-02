@@ -141,13 +141,7 @@ export interface Highlight {
 // Decides which learning sites are worth linking. 'credential' covers things a course
 // cannot fix (a degree, years of experience, a clearance).
 export type GapCategory =
-	| 'language'
-	| 'framework'
-	| 'tool'
-	| 'concept'
-	| 'algorithms'
-	| 'soft-skill'
-	| 'credential'
+	'language' | 'framework' | 'tool' | 'concept' | 'algorithms' | 'soft-skill' | 'credential'
 
 export interface Gap {
 	id: string
@@ -194,16 +188,49 @@ export interface MatchAnalysis {
 	generatedAt: string
 }
 
+// ---------- Recommendations ----------
+
+// Compatible with TechStackList's `Tech` when `icon` is set
+export interface SkillTag {
+	name: string
+	// Simple Icons slug
+	icon?: string
+}
+
+export interface Recommendation {
+	job: JobPosting
+	// 0–100: the model's predicted chance the user swipes right
+	score: number
+	// Skills the posting asks for that the user has / lacks
+	matchedSkills: SkillTag[]
+	missingSkills: SkillTag[]
+	// Short human-readable explanations ("Uses Python, SQL", "Similar to jobs you liked")
+	reasons: string[]
+}
+
+// What the model has learned from swipes, for a "your taste" view
+export interface TasteSummary {
+	likes: string[]
+	dislikes: string[]
+	swipeCount: number
+}
+
 // ---------- API ----------
 
-// POST /api/jobs/candidates
-export interface CandidatesRequest {
+// POST /api/jobs/recommendations
+export interface RecommendationsRequest {
 	profile: SearchProfile
-	// Job ids to leave out, e.g. ones already swiped
-	exclude?: string[]
+	// Resume.skills, free-form; normalized on the server
+	skills: string[]
+	// Resume.rawText; improves semantic matching when present
+	resumeText?: string
+	// Full swipe history, oldest first. The model is retrained from it on every request, and
+	// swiped jobs are never recommended again.
+	swipes?: Swipe[]
 	limit?: number
 }
 
-export interface CandidatesResponse {
-	jobs: JobPosting[]
+export interface RecommendationsResponse {
+	recommendations: Recommendation[]
+	taste: TasteSummary
 }
