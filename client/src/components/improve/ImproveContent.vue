@@ -38,23 +38,34 @@
 				<!-- Each pill jumps to its card -->
 				<ul v-if="items.length" class="mt-4 flex flex-wrap gap-1.5">
 					<li v-for="{ gap, tech } in items" :key="gap.id">
-						<button
-							class="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+						<!-- Required skills get a + (outside the jump button) that adds the skill to the profile -->
+						<div
+							class="flex items-center rounded-full text-xs font-medium transition-colors"
 							:class="
 								gap.severity === 'major'
 									? 'bg-amber-400/15 text-amber-300 hover:bg-amber-400/25'
 									: 'bg-accent/10 text-accent-soft hover:bg-accent/20'
 							"
-							@click="jumpTo(gap.id)"
 						>
-							<img
-								v-if="tech"
-								:src="`https://cdn.simpleicons.org/${tech.icon}/white`"
-								alt=""
-								class="size-3"
+							<button class="flex cursor-pointer items-center gap-1.5 py-1 pl-3" :class="canAdd(gap) ? 'pr-1.5' : 'pr-3'" @click="jumpTo(gap.id)">
+								<img
+									v-if="tech"
+									:src="`https://cdn.simpleicons.org/${tech.icon}/white`"
+									alt=""
+									class="size-3"
+								/>
+								{{ gap.skill || gap.requirement }}
+							</button>
+							<AddSkillButton
+								v-if="canAdd(gap)"
+								class="mr-1"
+								size="sm"
+								:skill="gap.skill"
+								:added="resumeStore.hasSkill(gap.skill)"
+								@add="resumeStore.addSkill(gap.skill)"
+								@remove="resumeStore.removeSkill(gap.skill)"
 							/>
-							{{ gap.skill || gap.requirement }}
-						</button>
+						</div>
 					</li>
 				</ul>
 			</div>
@@ -78,7 +89,11 @@
 					:tech="item.tech"
 					:resources="item.resources"
 					:open="openId === item.gap.id"
+					:can-add="canAdd(item.gap)"
+					:added="resumeStore.hasSkill(item.gap.skill)"
 					@toggle="toggle(item.gap.id)"
+					@add-skill="resumeStore.addSkill(item.gap.skill)"
+					@remove-skill="resumeStore.removeSkill(item.gap.skill)"
 				/>
 			</div>
 		</template>
@@ -87,6 +102,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import AddSkillButton from '@/components/improve/AddSkillButton.vue'
 import GapCard from '@/components/improve/GapCard.vue'
 import ScoreRing from '@/components/improve/ScoreRing.vue'
 import { analysisFromRecommendation } from '@/lib/gapAnalysis'
@@ -95,6 +111,7 @@ import { findTech } from '@/lib/techStack'
 import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
 import { useResumeStore } from '@/stores/resume'
+import type { Gap } from '@/types'
 
 const props = defineProps<{ jobId: string }>()
 
@@ -132,6 +149,12 @@ const items = computed(() => {
 		resources: resourcesForGap(gap),
 	}))
 })
+
+// Only required skills can be added, only when there is a resume to add them to, and only when the gap
+// names a short skill (not a whole requirement sentence)
+function canAdd(gap: Gap) {
+	return gap.severity === 'major' && !!gap.skill && !!resumeStore.current
+}
 
 const requiredCount = computed(
 	() => items.value.filter((item) => item.gap.severity === 'major').length,

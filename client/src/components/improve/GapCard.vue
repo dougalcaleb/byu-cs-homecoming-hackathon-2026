@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AddSkillButton from '@/components/improve/AddSkillButton.vue'
 import type { Tech } from '@/components/TechStackList.vue'
 import type { Gap, LearningResource, ResourceKind } from '@/types'
 
@@ -8,8 +9,12 @@ const props = defineProps<{
 	tech?: Tech
 	resources: LearningResource[]
 	open: boolean
+	/** Show a + that adds this skill to the profile */
+	canAdd?: boolean
+	/** The skill is already in the profile */
+	added?: boolean
 }>()
-const emit = defineEmits<{ toggle: [] }>()
+const emit = defineEmits<{ toggle: []; addSkill: []; removeSkill: [] }>()
 
 const KIND_LABELS: Record<ResourceKind, string> = {
 	course: 'Course',
@@ -38,9 +43,9 @@ const others = computed(() => props.resources.slice(1))
 		class="overflow-hidden rounded-xl border border-l-2 border-border bg-card"
 		:class="required ? 'border-l-amber-400' : 'border-l-accent'"
 	>
-		<h3>
+		<h3 class="flex items-center">
 			<button
-				class="flex w-full cursor-pointer items-center gap-3 p-3 text-left transition-colors hover:bg-white/5"
+				class="flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-3 text-left transition-colors hover:bg-white/5"
 				:aria-expanded="open"
 				@click="emit('toggle')"
 			>
@@ -88,6 +93,7 @@ const others = computed(() => props.resources.slice(1))
 					<path d="m6 9 6 6 6-6" />
 				</svg>
 			</button>
+			<AddSkillButton v-if="canAdd" class="mr-3 ml-1 shrink-0" :skill="name" :added="!!added" @add="emit('addSkill')" @remove="emit('removeSkill')" />
 		</h3>
 
 		<!-- Animates height by transitioning the grid row between 0fr and 1fr -->
