@@ -62,12 +62,15 @@ import JobDetails from '@/components/JobDetails.vue'
 import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
 import { coverBackground, prefetchBrand } from '@/lib/brand'
-import { fetchRecommendations } from '@/lib/api'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchJob, fetchRecommendations } from '@/lib/api'
 import { useJobsStore } from '@/stores/jobs'
 import { useResumeStore } from '@/stores/resume'
 
 const jobsStore = useJobsStore()
 const resumeStore = useResumeStore()
+const route = useRoute()
+const router = useRouter()
 
 // ---------- Job queue ----------
 
@@ -115,6 +118,50 @@ const job = computed(() => jobsStore.deck[0])
 
 // The job after the current one, prerendered so it can slide in
 const nextJob = computed(() => jobsStore.deck[1])
+
+// ---------- Links to a job (URL fragment) ----------
+
+// The fragment is the current job's id (/#greenhouse:acme:123), so any posting can be linked to.
+// vue-router encodes it when writing the URL and hands it back decoded, so no manual (de)coding here.
+const fragmentId = () => route.hash.slice(1)
+
+// True while a linked job is being looked up, so the old current job does not overwrite the fragment
+let resolvingLink = false
+
+function syncFragment() {
+	// Never touch the URL of another page (e.g. a batch finishing after the user left)
+	if (resolvingLink || route.name !== 'home') return
+	const id = job.value?.id ?? ''
+	if (fragmentId() === id) return
+	// replace, not push: swiping through the deck should not fill the back button's history
+	void router.replace({ hash: id ? '#' + id : '' })
+}
+
+async function openLinkedJob(id: string) {
+	resolvingLink = true
+	try {
+		const linked = jobsStore.jobById(id) ?? (await fetchJob(id))
+		if (linked) jobsStore.bringToFront(linked)
+	} catch {
+		// Offline or server error: stay on the current job
+	} finally {
+		resolvingLink = false
+	}
+	syncFragment()
+}
+
+// Opening or editing a link (also back/forward) shows that job
+watch(
+	() => route.hash,
+	() => {
+		const id = fragmentId()
+		if (route.name === 'home' && id && id !== job.value?.id) void openLinkedJob(id)
+	},
+	{ immediate: true },
+)
+
+// Swiping to another job updates the fragment (and a fresh visit gets one for the first job)
+watch(() => job.value?.id, syncFragment, { immediate: true })
 
 // Prefetch every queued job's logo up front, so cards never wait on the network when they come into view
 watch(

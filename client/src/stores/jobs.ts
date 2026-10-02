@@ -47,6 +47,12 @@ export const useJobsStore = defineStore('jobs', () => {
 		return fresh.length
 	}
 
+	// Makes a job the next one in the deck (e.g. when opening a link to it), un-swiping it if needed
+	function bringToFront(job: JobPosting) {
+		delete swipes.value[job.id]
+		jobs.value = { status: 'ready', data: [job, ...all.value.filter((queued) => queued.id !== job.id)] }
+	}
+
 	function setError(error: string) {
 		jobs.value = { status: 'error', error }
 	}
@@ -80,6 +86,7 @@ export const useJobsStore = defineStore('jobs', () => {
 		setLoading,
 		setJobs,
 		addRecommendations,
+		bringToFront,
 		setError,
 		swipe,
 		undoSwipe,
