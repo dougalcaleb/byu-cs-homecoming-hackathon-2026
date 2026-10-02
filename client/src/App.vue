@@ -12,11 +12,11 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
 <template>
 	<AppSidebar :open="menuOpen" @close="menuOpen = false" />
 
-	<!-- Content is offset by the sidebar on lg+, then centered as a mobile-width column -->
+	<!-- Content fills the width beside the sidebar; individual views decide their own width -->
 	<div class="lg:pl-64">
-		<div class="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-border bg-surface">
+		<div class="flex min-h-dvh w-full flex-col">
 			<AppHeader @menu="menuOpen = true" />
-			<main class="flex min-h-0 flex-1 flex-col">
+			<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<RouterView />
 			</main>
 		</div>
