@@ -4,6 +4,8 @@ import AppLogo from '@/components/AppLogo.vue'
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
+const logosEnabled = !!import.meta.env.VITE_LOGO_DEV_TOKEN
+
 const links = [
 	{ to: '/', label: 'Match' },
 	{ to: '/profile', label: 'Profile' },
@@ -29,5 +31,11 @@ const links = [
 				{{ link.label }}
 			</RouterLink>
 		</nav>
+
+		<!-- logo.dev's free tier requires a visible attribution link wherever its logos are shown -->
+		<a v-if="logosEnabled" href="https://logo.dev" target="_blank" rel="noopener"
+			class="mt-auto px-3 text-xs text-muted transition-colors hover:text-accent-soft">
+			Logos provided by Logo.dev
+		</a>
 	</aside>
 </template>

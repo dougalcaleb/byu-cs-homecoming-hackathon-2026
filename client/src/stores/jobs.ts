@@ -1,10 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { loadStored, persist } from '@/lib/storage'
-import type { AsyncState, JobPosting, Swipe, SwipeDirection } from '@/types'
+import type { AsyncState, JobPosting, Recommendation, Swipe, SwipeDirection } from '@/types'
 
 // Bump the version when the saved jobs should be discarded (e.g. the mock postings change)
-const JOBS_KEY = 'gig-glide:jobs:v4'
+const JOBS_KEY = 'gig-glide:jobs:v5'
+const RECS_KEY = 'gig-glide:recommendations:v1'
 const SWIPES_KEY = 'gig-glide:swipes'
 
 export const useJobsStore = defineStore('jobs', () => {
@@ -13,6 +14,8 @@ export const useJobsStore = defineStore('jobs', () => {
 		stored ? { status: 'ready', data: stored } : { status: 'idle' },
 	)
 	const swipes = ref<Record<string, Swipe>>(loadStored(SWIPES_KEY) ?? {})
+	// What the ranking API said about each job (score, matched/missing skills, reasons), keyed by job id
+	const recommendations = ref<Record<string, Recommendation>>(loadStored(RECS_KEY) ?? {})
 
 	const all = computed(() => (jobs.value.status === 'ready' ? jobs.value.data : []))
 	// Jobs the user has not swiped on yet
@@ -35,6 +38,15 @@ export const useJobsStore = defineStore('jobs', () => {
 		jobs.value = { status: 'ready', data: unique }
 	}
 
+	// Adds a batch from the recommendations API to the queue; jobs already in the store are kept as they are
+	function addRecommendations(batch: Recommendation[]) {
+		const known = new Set(all.value.map((job) => job.id))
+		const fresh = batch.filter((recommendation) => !known.has(recommendation.job.id))
+		for (const recommendation of batch) recommendations.value[recommendation.job.id] = recommendation
+		jobs.value = { status: 'ready', data: [...all.value, ...fresh.map((recommendation) => recommendation.job)] }
+		return fresh.length
+	}
+
 	function setError(error: string) {
 		jobs.value = { status: 'error', error }
 	}
@@ -50,20 +62,24 @@ export const useJobsStore = defineStore('jobs', () => {
 	function clear() {
 		jobs.value = { status: 'idle' }
 		swipes.value = {}
+		recommendations.value = {}
 	}
 
 	persist(JOBS_KEY, () => (jobs.value.status === 'ready' ? jobs.value.data : null))
 	persist(SWIPES_KEY, swipes)
+	persist(RECS_KEY, recommendations)
 
 	return {
 		jobs,
 		swipes,
+		recommendations,
 		all,
 		deck,
 		liked,
 		jobById,
 		setLoading,
 		setJobs,
+		addRecommendations,
 		setError,
 		swipe,
 		undoSwipe,

@@ -45,7 +45,18 @@
 		</section>
 	</div>
 
-	<p v-else class="m-auto text-sm text-muted">No more jobs to show.</p>
+	<div v-else class="m-auto flex flex-col items-center gap-3 px-6 text-center text-sm text-muted">
+		<template v-if="loadError">
+			<p>{{ loadError }}</p>
+			<button class="rounded-full bg-accent px-4 py-2 font-semibold text-page" @click="loadMore">Try again</button>
+		</template>
+		<p v-else-if="loadingMore">Finding jobs for you…</p>
+		<template v-else-if="!resumeStore.current">
+			<p>Upload your resume to see jobs matched to you.</p>
+			<RouterLink to="/onboarding" class="rounded-full bg-accent px-4 py-2 font-semibold text-page">Add resume</RouterLink>
+		</template>
+		<p v-else>No more jobs to show.</p>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -54,36 +65,64 @@ import JobDetails from '@/components/JobDetails.vue'
 import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
 import { coverBackground, prefetchBrand } from '@/lib/brand'
-import { mockJobs, mockMatches } from '@/mocks'
+import { fetchRecommendations } from '@/lib/api'
 import { useJobsStore } from '@/stores/jobs'
-import { useMatchesStore } from '@/stores/matches'
+import { useResumeStore } from '@/stores/resume'
 
 const jobsStore = useJobsStore()
-const matchesStore = useMatchesStore()
+const resumeStore = useResumeStore()
 
-// Temporary: seed fake data until the job fetch and analysis features are wired up
-if (jobsStore.jobs.status === 'idle') jobsStore.setJobs(mockJobs)
-for (const analysis of mockMatches) {
-	if (matchesStore.analysisFor(analysis.jobId).status === 'idle') matchesStore.setAnalysis(analysis)
+// ---------- Job queue ----------
+
+// Ask the API for the next batch when this many (or fewer) unswiped jobs are left
+const LOW_WATER = 5
+
+const loadingMore = ref(false)
+const loadError = ref<string | null>(null)
+// Set when the API has nothing new to offer, so an empty answer does not trigger endless refetching
+let exhausted = false
+
+async function loadMore() {
+	if (loadingMore.value) return
+	loadingMore.value = true
+	loadError.value = null
+	try {
+		const resume = resumeStore.current
+		const response = await fetchRecommendations({
+			profile: resume?.searchProfile ?? { titles: [], keywords: [] },
+			skills: resume?.skills ?? [],
+			resumeText: resume?.rawText,
+			// The full history, oldest first: the API retrains from it and never repeats a swiped job
+			swipes: Object.values(jobsStore.swipes).sort((a, b) => a.swipedAt.localeCompare(b.swipedAt)),
+			limit: 30,
+		})
+		exhausted = jobsStore.addRecommendations(response.recommendations) === 0
+	} catch (error) {
+		loadError.value = error instanceof Error ? error.message : 'Could not load jobs'
+	} finally {
+		loadingMore.value = false
+	}
 }
 
-// Temporary stand-in for the backend: when the local queue runs out, loop back to the first listing.
-// A real implementation would fetch the next batch and call jobsStore.setJobs() here.
-function refillQueue() {
-	for (const queued of jobsStore.all) jobsStore.undoSwipe(queued.id)
-}
-if (jobsStore.all.length && !jobsStore.deck.length) refillQueue()
+// Top up the queue whenever it runs low (and once on load)
+watch(
+	() => jobsStore.deck.length,
+	(remaining) => {
+		if (remaining <= LOW_WATER && !exhausted && !loadError.value) void loadMore()
+	},
+	{ immediate: true },
+)
 
 // The job currently on screen: the first one not yet swiped
 const job = computed(() => jobsStore.deck[0])
 
-// The job after the current one (wraps to the first listing, matching refillQueue)
-const nextJob = computed(() => jobsStore.deck[1] ?? jobsStore.all[0])
+// The job after the current one, prerendered so it can slide in
+const nextJob = computed(() => jobsStore.deck[1])
 
 // Prefetch every queued job's logo up front, so cards never wait on the network when they come into view
 watch(
 	() => jobsStore.all,
-	(jobs) => jobs.forEach((queued) => prefetchBrand(queued.company)),
+	(jobs) => jobs.forEach(prefetchBrand),
 	{ immediate: true },
 )
 
@@ -152,7 +191,6 @@ function finishPass() {
 	passTimer = undefined
 
 	if (job.value) jobsStore.swipe(job.value.id, 'pass')
-	if (!jobsStore.deck.length) refillQueue()
 	// The next card is now the current one and is already in view; snap the strip back without animating
 	dragging.value = true
 	dragX.value = 0

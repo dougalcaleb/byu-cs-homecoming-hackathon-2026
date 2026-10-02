@@ -2,9 +2,10 @@ import { reactive } from 'vue'
 import { coverGradient } from '@/lib/cover'
 
 // Brand lookup for job cards, straight from the browser:
-//   1. logo.dev's image CDN returns the company's logo, looked up by company name. The token is a
+//   1. The posting's own logo (JobPosting.companyLogoUrl) is used when it has one and it loads.
+//   2. Otherwise logo.dev's image CDN returns the company's logo, looked up by company name. The token is a
 //      *publishable* key (pk_...), which logo.dev designed to be used in the browser.
-//   2. The card's gradient color is sampled from that logo with a canvas.
+//   3. The card's gradient color is sampled from whichever logo was used, with a canvas.
 // Put the token in client/.env.local as VITE_LOGO_DEV_TOKEN (see .env.example).
 // Without it, cards fall back to a monogram and a gradient derived from the company name.
 const TOKEN = import.meta.env.VITE_LOGO_DEV_TOKEN
@@ -119,20 +120,32 @@ async function loadLogo(url: string, knownColor: BrandColor | null | undefined) 
 	throw new Error('Logo failed to load')
 }
 
-/** Download and decode a company's logo, and sample its color, ahead of time. Safe to call repeatedly. */
-export function prefetchBrand(company: string) {
-	if (!TOKEN || brands[company]) return
+/**
+ * Download and decode a job's company logo, and sample its color, ahead of time. Safe to call repeatedly.
+ * Tries the posting's own logo first, then logo.dev (if a token is configured).
+ */
+export function prefetchBrand(job: { company: string; companyLogoUrl?: string }) {
+	const { company } = job
+	if (brands[company]) return
+
+	const candidates = [job.companyLogoUrl, TOKEN ? logoUrlFor(company) : undefined].filter(
+		(url): url is string => !!url,
+	)
+	if (!candidates.length) return
 	brands[company] = { status: 'loading' }
 
 	void (async () => {
-		try {
-			const logoUrl = logoUrlFor(company)
-			const { color } = await loadLogo(logoUrl, savedColors[company])
-			rememberColor(company, color)
-			brands[company] = { status: 'ready', logoUrl, color }
-		} catch {
-			brands[company] = { status: 'failed' }
+		for (const logoUrl of candidates) {
+			try {
+				const { color } = await loadLogo(logoUrl, savedColors[company])
+				rememberColor(company, color)
+				brands[company] = { status: 'ready', logoUrl, color }
+				return
+			} catch {
+				// Try the next source
+			}
 		}
+		brands[company] = { status: 'failed' }
 	})()
 }
 

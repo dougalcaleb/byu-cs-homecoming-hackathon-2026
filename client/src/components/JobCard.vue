@@ -18,7 +18,9 @@
 import { computed } from 'vue'
 import JobCardCover from '@/components/JobCardCover.vue'
 import JobCardFooter from '@/components/JobCardFooter.vue'
+import type { Tech } from '@/components/TechStackList.vue'
 import { extractTechStack } from '@/lib/techStack'
+import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
 import type { JobPosting } from '@/types'
 
@@ -35,11 +37,24 @@ const props = withDefaults(
 )
 
 const matchesStore = useMatchesStore()
+const jobsStore = useJobsStore()
 
+const recommendation = computed(() => jobsStore.recommendations[props.job.id])
+
+// A full match analysis wins; before that, the ranking API's predicted score
 const match = computed(() => {
 	const state = matchesStore.analysisFor(props.job.id)
-	return state.status === 'ready' ? state.data.score : null
+	if (state.status === 'ready') return state.data.score
+	return recommendation.value ? Math.round(recommendation.value.score) : null
 })
 
-const techStack = computed(() => extractTechStack(props.job))
+// The skills the API found in the posting (the ones that have an icon), else a keyword scan of the text
+const techStack = computed<Tech[]>(() => {
+	const skills = [...(recommendation.value?.matchedSkills ?? []), ...(recommendation.value?.missingSkills ?? [])]
+	const seen = new Set<string>()
+	const tags = skills.flatMap((skill) =>
+		skill.icon && !seen.has(skill.name) && seen.add(skill.name) ? [{ name: skill.name, icon: skill.icon }] : [],
+	)
+	return tags.length ? tags : extractTechStack(props.job)
+})
 </script>

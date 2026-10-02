@@ -20,7 +20,7 @@ import type { JobPosting } from '@/types'
 const props = defineProps<{ job: JobPosting }>()
 
 // Normally already prefetched by the deck; this covers any card shown before that happens
-watchEffect(() => prefetchBrand(props.job.company))
+watchEffect(() => prefetchBrand(props.job))
 
 // Only set once the logo is loaded and decoded, so it never pops in or flashes a broken image
 const logo = computed(() => logoFor(props.job.company))
