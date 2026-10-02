@@ -13,6 +13,9 @@
 @layer base {
   html {
     color-scheme: dark;
+    /* Always leave room for the page scrollbar, so content doesn't shift sideways when a page
+       becomes tall enough to need one (e.g. the history list after it loads) */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-page text-neutral-100 antialiased;
