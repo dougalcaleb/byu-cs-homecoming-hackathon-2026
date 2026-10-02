@@ -1,8 +1,6 @@
 <template>
 	<!-- Only this view is a phone-width column; the swipe hints sit in the negative space beside it -->
 	<div v-if="job" ref="column" class="relative mx-auto flex w-full max-w-md flex-1">
-		<HeartBubbles :column="column" />
-
 		<!-- Page background: the current job's brand gradient, blurred and dimmed -->
 		<div class="pointer-events-none fixed inset-0 -z-10 scale-110 blur-3xl" :style="{ background: coverBackground(job.company) }" />
 		<div class="pointer-events-none fixed inset-0 -z-10 bg-black/80" />
