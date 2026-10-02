@@ -247,6 +247,8 @@ export interface HistoryEntry {
 	direction: SwipeDirection
 	// ISO 8601
 	swipedAt: string
+	// ISO 8601; set once the user said they applied (the app asks after they open the application)
+	appliedAt?: string
 }
 
 // POST /api/history
@@ -254,6 +256,15 @@ export interface RecordHistoryRequest {
 	// Who swiped (the signed-in email). The app has no server-side accounts yet.
 	user: string
 	entry: HistoryEntry
+}
+
+// PUT /api/history/applied
+export interface RecordAppliedRequest {
+	user: string
+	// Snapshot used to create the row if the swipe was never recorded (direction 'like': applying means interest)
+	entry: HistoryEntry
+	// When they applied; null takes the mark back
+	appliedAt: string | null
 }
 
 // GET /api/history?user=...

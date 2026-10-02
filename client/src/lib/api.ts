@@ -4,6 +4,7 @@ import type {
 	JobPosting,
 	RecommendationsRequest,
 	RecommendationsResponse,
+	RecordAppliedRequest,
 	RecordHistoryRequest,
 } from '@/types'
 
@@ -43,4 +44,19 @@ export async function fetchHistory(user: string): Promise<HistoryEntry[]> {
 	const response = await fetch(`/api/history?user=${encodeURIComponent(user)}`)
 	if (!response.ok) throw new Error(`Loading history failed (${response.status})`)
 	return ((await response.json()) as HistoryResponse).entries
+}
+
+/** Record the answer to "did you apply?": when they applied, or null to take the mark back. */
+export async function recordApplied(
+	user: string,
+	entry: HistoryEntry,
+	appliedAt: string | null,
+): Promise<void> {
+	const body: RecordAppliedRequest = { user, entry, appliedAt }
+	const response = await fetch('/api/history/applied', {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+	})
+	if (!response.ok) throw new Error(`Saving application failed (${response.status})`)
 }

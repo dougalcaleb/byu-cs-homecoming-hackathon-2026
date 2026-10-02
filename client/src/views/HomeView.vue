@@ -5,6 +5,9 @@
 		<div class="pointer-events-none fixed inset-0 -z-10 scale-110 blur-3xl" :style="{ background: coverBackground(job.company) }" />
 		<div class="pointer-events-none fixed inset-0 -z-10 bg-black/80" />
 
+		<ApplyBanner v-if="applyPrompt" :company="applyPrompt.job.company" :status="applyPrompt.status"
+			@answer="answerApplied" />
+
 		<template v-if="!liked">
 			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap right-full mr-4 -translate-y-1/2 text-md font-medium text-neutral-300">
 				&lsaquo; Pass
@@ -29,7 +32,7 @@
 						:class="{ 'transition-[width] duration-200': !dragging }"
 						:style="{ width: Math.max(0, dragX * 2) + 'px' }">
 						<JobDetails :job="job" class="absolute inset-y-0 right-0 border-l border-border bg-surface"
-							:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" />
+							:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" @apply="askIfApplied" />
 					</div>
 
 					<JobCard data-current :job="job" class="left-0" />
@@ -58,12 +61,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import ApplyBanner from '@/components/ApplyBanner.vue'
 import JobDetails from '@/components/JobDetails.vue'
 import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
 import { coverBackground, prefetchBrand } from '@/lib/brand'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchJob, fetchRecommendations, recordHistory } from '@/lib/api'
+import { fetchJob, fetchRecommendations, recordApplied, recordHistory } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import { useJobsStore } from '@/stores/jobs'
 import { useResumeStore } from '@/stores/resume'
@@ -137,6 +141,49 @@ function logSwipe(swiped: JobPosting, direction: SwipeDirection) {
 		swipedAt: new Date().toISOString(),
 	}).catch(() => {})
 }
+
+// "Did you apply?" banner: opening an application asks, and a yes is saved to the history
+const applyPrompt = ref<{ job: JobPosting; status: 'asking' | 'failed' | 'saved' } | null>(null)
+let dismissTimer: ReturnType<typeof setTimeout> | undefined
+
+function askIfApplied() {
+	if (!job.value) return
+	clearTimeout(dismissTimer)
+	applyPrompt.value = { job: job.value, status: 'asking' }
+}
+
+async function answerApplied(applied: boolean) {
+	const prompt = applyPrompt.value
+	if (!prompt) return
+	if (!applied) {
+		applyPrompt.value = null
+		return
+	}
+	const user = authStore.currentEmail
+	if (!user) return
+	const now = new Date().toISOString()
+	try {
+		// The snapshot only matters if the swipe was never recorded; applying implies they liked it
+		await recordApplied(
+			user,
+			{ jobId: prompt.job.id, company: prompt.job.company, title: prompt.job.title, direction: 'like', swipedAt: now },
+			now,
+		)
+		prompt.status = 'saved'
+		dismissTimer = setTimeout(() => (applyPrompt.value = null), 2500)
+	} catch {
+		prompt.status = 'failed'
+	}
+}
+
+// The question is about one job; it goes away when the deck moves on
+watch(
+	() => job.value?.id,
+	() => {
+		clearTimeout(dismissTimer)
+		applyPrompt.value = null
+	},
+)
 
 // ---------- Links to a job (URL fragment) ----------
 
@@ -348,6 +395,7 @@ watch([dragging, dragX], () => {
 
 onUnmounted(() => {
 	sizeObserver.disconnect()
+	clearTimeout(dismissTimer)
 	clearTimeout(sideTimer)
 	finishPass()
 })

@@ -1,13 +1,15 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import type {
+	HistoryEntry,
 	HistoryResponse,
 	RecommendationsRequest,
+	RecordAppliedRequest,
 	RecordHistoryRequest,
 } from '../../shared/types'
 import { BOARDS } from './boards'
 import { jobsById } from './candidates'
-import { listHistory, recordSwipe } from './history'
+import { listHistory, recordSwipe, setApplied } from './history'
 import { getPool } from './pool'
 import { activeSearchProvider } from './providers'
 import { indexInBackground, indexStatus } from './rank/embeddings'
@@ -50,26 +52,32 @@ app.get('/api/history', (c) => {
 	return c.json<HistoryResponse>({ entries: listHistory(user) })
 })
 
+const isValidEntry = (entry: HistoryEntry | undefined): entry is HistoryEntry =>
+	!!entry?.jobId &&
+	!!entry.company &&
+	!!entry.title &&
+	(entry.direction === 'like' || entry.direction === 'pass') &&
+	!Number.isNaN(Date.parse(entry.swipedAt))
+
+const ENTRY_SHAPE = '{ jobId, company, title, direction: "like" | "pass", swipedAt: ISO date }'
+
 app.post('/api/history', async (c) => {
 	const body = await c.req.json<RecordHistoryRequest>().catch(() => null)
-	const entry = body?.entry
-	if (
-		!body?.user ||
-		!entry?.jobId ||
-		!entry.company ||
-		!entry.title ||
-		(entry.direction !== 'like' && entry.direction !== 'pass') ||
-		Number.isNaN(Date.parse(entry.swipedAt))
-	) {
-		return c.json(
-			{
-				error:
-					'Expected { user, entry: { jobId, company, title, direction: "like" | "pass", swipedAt: ISO date } }',
-			},
-			400,
-		)
+	if (!body?.user || !isValidEntry(body.entry)) {
+		return c.json({ error: `Expected { user, entry: ${ENTRY_SHAPE} }` }, 400)
 	}
-	recordSwipe(body.user, entry)
+	recordSwipe(body.user, body.entry)
+	return c.json({ ok: true })
+})
+
+// "Did you apply?" answers. appliedAt: ISO date, or null to take the mark back.
+app.put('/api/history/applied', async (c) => {
+	const body = await c.req.json<RecordAppliedRequest>().catch(() => null)
+	const validTime = body?.appliedAt === null || !Number.isNaN(Date.parse(body?.appliedAt ?? ''))
+	if (!body?.user || !isValidEntry(body.entry) || !validTime) {
+		return c.json({ error: `Expected { user, entry: ${ENTRY_SHAPE}, appliedAt: ISO date | null }` }, 400)
+	}
+	setApplied(body.user, body.entry, body.appliedAt)
 	return c.json({ ok: true })
 })
 

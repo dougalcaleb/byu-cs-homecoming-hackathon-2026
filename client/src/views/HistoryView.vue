@@ -7,8 +7,8 @@
 			</div>
 
 			<!-- Filter -->
-			<div v-if="entries.length" class="flex gap-2" role="tablist">
-				<button v-for="option in filters" :key="option.value" role="tab" :aria-selected="filter === option.value"
+			<div v-if="entries.length" class="flex flex-wrap gap-2" role="tablist">
+				<button v-for="option in filters" :key="option.value" role="tab" :aria-selected="filter === option.value" :title="option.hint"
 					class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
 					:class="filter === option.value ? 'bg-accent text-page' : 'bg-card text-muted hover:text-accent-soft'"
 					@click="filter = option.value">
@@ -55,6 +55,12 @@
 						<time :datetime="entry.swipedAt" :title="new Date(entry.swipedAt).toLocaleString()">
 							{{ ago(entry.swipedAt) }}
 						</time>
+						<template v-if="entry.appliedAt">
+							<span aria-hidden="true">·</span>
+							<span class="font-medium text-accent" :title="'Applied ' + new Date(entry.appliedAt).toLocaleString()">
+								✓ Applied
+							</span>
+						</template>
 					</p>
 				</div>
 
@@ -100,24 +106,34 @@ onMounted(load)
 
 // ---------- Filter ----------
 
-type Filter = 'all' | 'like' | 'pass'
+type Filter = 'all' | 'like' | 'pass' | 'applied' | 'notApplied'
 
-const filters: { value: Filter; label: string }[] = [
-	{ value: 'all', label: 'All' },
-	{ value: 'like', label: 'Liked' },
-	{ value: 'pass', label: 'Passed' },
+const matches: Record<Filter, (entry: HistoryEntry) => boolean> = {
+	all: () => true,
+	like: (entry) => entry.direction === 'like',
+	pass: (entry) => entry.direction === 'pass',
+	applied: (entry) => !!entry.appliedAt,
+	// Looked at the details (a right swipe) but never said they applied
+	notApplied: (entry) => entry.direction === 'like' && !entry.appliedAt,
+}
+
+const filters: { value: Filter; label: string; hint: string }[] = [
+	{ value: 'all', label: 'All', hint: 'Everything you have swiped on' },
+	{ value: 'like', label: 'Liked', hint: 'Jobs you swiped right on' },
+	{ value: 'pass', label: 'Passed', hint: 'Jobs you swiped left on' },
+	{ value: 'applied', label: 'Applied', hint: 'Jobs you applied to' },
+	{ value: 'notApplied', label: 'Not applied', hint: 'Jobs you liked and looked at, but did not apply to' },
 ]
 const filter = ref<Filter>('all')
 
-const counts = computed(() => ({
-	all: entries.value.length,
-	like: entries.value.filter((entry) => entry.direction === 'like').length,
-	pass: entries.value.filter((entry) => entry.direction === 'pass').length,
-}))
-
-const visible = computed(() =>
-	filter.value === 'all' ? entries.value : entries.value.filter((entry) => entry.direction === filter.value),
+const counts = computed(
+	() =>
+		Object.fromEntries(
+			filters.map(({ value }) => [value, entries.value.filter(matches[value]).length]),
+		) as Record<Filter, number>,
 )
+
+const visible = computed(() => entries.value.filter(matches[filter.value]))
 
 // ---------- Display ----------
 
