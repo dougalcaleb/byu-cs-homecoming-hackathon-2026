@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -14,22 +14,24 @@ function getStarted() {
 	leaving.value = true
 	setTimeout(() => router.push('/login'), 500)
 }
+
+onMounted(() => {
+	// Fallback: show button after 4s if video end event is delayed
+	setTimeout(() => {
+		videoEnded.value = true
+	}, 4000)
+})
 </script>
 
 <template>
 	<div
 		id="splash-screen"
-		class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-page transition-all duration-500"
+		class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black transition-all duration-500"
 		:class="leaving && 'opacity-0 scale-105'"
 	>
-		<!-- Ambient glow behind the logo -->
-		<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-			<div class="size-96 rounded-full bg-accent/8 blur-[120px]" />
-		</div>
-
-		<!-- Dynamic logo video -->
+		<!-- Dynamic logo video merging into pure black backdrop -->
 		<video
-			class="relative z-10 w-72 drop-shadow-2xl sm:w-80"
+			class="relative z-10 w-72 sm:w-80"
 			autoplay
 			muted
 			playsinline
@@ -38,7 +40,7 @@ function getStarted() {
 			<source src="/gigglidedynamicm3.webm" type="video/webm" />
 		</video>
 
-		<!-- Fallback: auto-show button after 5s if video doesn't fire ended -->
+		<!-- Get Started button -->
 		<Transition name="fade-up">
 			<button
 				v-if="videoEnded"

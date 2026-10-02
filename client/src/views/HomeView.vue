@@ -13,7 +13,7 @@
 				&lsaquo; Pass
 			</span>
 			<span class="pointer-events-none absolute top-1/2 whitespace-nowrap left-full ml-4 -translate-y-1/2 text-md font-medium text-neutral-300">
-				Like &rsaquo;
+				Apply &rsaquo;
 			</span>
 		</template>
 
@@ -31,11 +31,16 @@
 					<div class="absolute inset-y-0 right-full overflow-hidden"
 						:class="{ 'transition-[width] duration-200': !dragging }"
 						:style="{ width: Math.max(0, dragX * 2) + 'px' }">
-						<JobDetails :job="job" class="absolute inset-y-0 right-0 border-l border-border bg-surface"
-							:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" @apply="askIfApplied" />
+						<ImprovePanel :job="job" :profile-shown="showProfile"
+							class="absolute inset-y-0 right-0 border-l border-border bg-surface"
+							:style="{ width: cardWidth + 'px' }" :inert="!liked" @back="resetCard" @apply="askIfApplied"
+							@toggle-profile="showProfile = !showProfile" />
 					</div>
 
-					<JobCard data-current :job="job" class="left-0" />
+					<!-- The job card, or (after "View profile") the user's profile in the same window -->
+					<ProfileView v-if="showProfile" data-current
+						class="absolute inset-y-0 left-0 touch-pan-y overflow-y-auto" />
+					<JobCard v-else data-current :job="job" class="left-0" />
 
 					<!-- Prerendered next job, directly right of the current card -->
 					<JobCard v-if="nextJob" :job="nextJob" class="left-full" :class="{ invisible: side === 'right' }"
@@ -62,12 +67,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import ApplyBanner from '@/components/ApplyBanner.vue'
-import JobDetails from '@/components/JobDetails.vue'
+import ImprovePanel from '@/components/ImprovePanel.vue'
 import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
 import { coverBackground, prefetchBrand } from '@/lib/brand'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchJob, fetchRecommendations, recordApplied, recordHistory } from '@/lib/api'
+import ProfileView from '@/views/ProfileView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useJobsStore } from '@/stores/jobs'
 import { useResumeStore } from '@/stores/resume'
@@ -269,8 +275,10 @@ const SWIPE_THRESHOLD = 100 // px of horizontal drag needed to count as a swipe
 // Horizontal offset of the whole strip: negative while swiping left (carousel), positive for right
 const dragX = ref(0)
 const dragging = ref(false)
-// Card swiped right; details are showing
+// Card swiped right; the Ways to improve window is showing
 const liked = ref(false)
+// Whether the window on the right shows the user's profile instead of the job card
+const showProfile = ref(false)
 
 // Which way the strip last moved. Lags behind dragX by one transition, so the carousel clip and the
 // hidden next card don't switch mid-animation.
@@ -382,6 +390,7 @@ function onPointerEnd() {
 
 function resetCard() {
 	liked.value = false
+	showProfile.value = false
 	dragX.value = 0
 }
 
