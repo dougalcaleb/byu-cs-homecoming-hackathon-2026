@@ -85,8 +85,8 @@ function removeProjectTech(proj: Project, index: number) {
 
 <template>
 	<div class="flex flex-col gap-8">
-		<!-- Summary -->
-		<div>
+		<!-- Summary (data-section lets the profile page's Edit links scroll to and highlight a block) -->
+		<div data-section="summary">
 			<h2 class="text-xl font-semibold text-neutral-100">Summary</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Brief professional summary</p>
 			<textarea
@@ -99,7 +99,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Skills -->
-		<div>
+		<div data-section="skills">
 			<h2 class="text-xl font-semibold text-neutral-100">Skills</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Technical and soft skills</p>
 
@@ -138,7 +138,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Projects -->
-		<div>
+		<div data-section="projects">
 			<div class="mb-3 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Projects</h2>
@@ -254,7 +254,7 @@ function removeProjectTech(proj: Project, index: number) {
 		</div>
 
 		<!-- Certifications -->
-		<div>
+		<div data-section="certifications">
 			<h2 class="text-xl font-semibold text-neutral-100">Certifications</h2>
 			<p class="mt-0.5 mb-3 text-sm text-muted">Professional certifications</p>
 

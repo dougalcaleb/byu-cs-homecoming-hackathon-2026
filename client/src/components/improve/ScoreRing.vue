@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{ score: number }>()
+// `label` names what the percentage measures, for screen readers
+const props = withDefaults(defineProps<{ score: number; label?: string }>(), { label: 'Match' })
 
 const RADIUS = 26
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
@@ -11,7 +12,7 @@ const offset = computed(() => CIRCUMFERENCE * (1 - Math.min(100, Math.max(0, pro
 </script>
 
 <template>
-	<div class="relative size-16 shrink-0" role="img" :aria-label="`Match ${score}%`">
+	<div class="relative size-16 shrink-0" role="img" :aria-label="`${label} ${score}%`">
 		<!-- Rotated so the ring fills clockwise from the top -->
 		<svg viewBox="0 0 64 64" class="size-full -rotate-90">
 			<circle

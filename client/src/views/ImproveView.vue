@@ -168,19 +168,3 @@ async function jumpTo(id: string) {
 	document.getElementById(`gap-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 </script>
-
-<style scoped>
-/* Cards fade and slide up on entry, staggered via animation-delay */
-@media (prefers-reduced-motion: no-preference) {
-	.rise {
-		animation: rise 0.4s ease-out both;
-	}
-}
-
-@keyframes rise {
-	from {
-		opacity: 0;
-		transform: translateY(8px);
-	}
-}
-</style>

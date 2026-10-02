@@ -53,8 +53,8 @@ function removeEducation(index: number) {
 
 <template>
 	<div class="flex flex-col gap-8">
-		<!-- Experience section -->
-		<div>
+		<!-- Experience section (data-section lets the profile page's Edit links scroll to and highlight a block) -->
+		<div data-section="experience">
 			<div class="mb-4 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Experience</h2>
@@ -174,7 +174,7 @@ function removeEducation(index: number) {
 		</div>
 
 		<!-- Education section -->
-		<div>
+		<div data-section="education">
 			<div class="mb-4 flex items-center justify-between">
 				<div>
 					<h2 class="text-xl font-semibold text-neutral-100">Education</h2>

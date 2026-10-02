@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { nextTick, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useResumeStore } from '@/stores/resume'
 import { useAuthStore } from '@/stores/auth'
 import type { Contact, Experience, Education, Project, Resume } from '@/types'
@@ -12,8 +12,16 @@ import ExperienceStep from '@/components/onboarding/ExperienceStep.vue'
 import SkillsStep from '@/components/onboarding/SkillsStep.vue'
 import ConfirmStep from '@/components/onboarding/ConfirmStep.vue'
 
+const route = useRoute()
 const router = useRouter()
 const resumeStore = useResumeStore()
+
+// Edit mode (?edit=1, optional &step=0..4): opened from the profile page with the saved
+// resume pre-filled, and saves back to it instead of creating a new one
+const existing = route.query.edit ? resumeStore.current : null
+const editing = existing !== null
+// A new file uploaded while editing replaces the saved resume rather than updating it
+let replacedFile = false
 
 const STEPS = ['Upload', 'Contact', 'Experience', 'Skills', 'Confirm']
 const step = ref(0)
@@ -36,37 +44,68 @@ const form = reactive({
 	certifications: [] as string[],
 })
 
-// Populate form with real ingested & parsed data after upload
-function onFileParsed(data: { fileName: string; rawText: string; parsed: Resume }) {
-	form.fileName = data.parsed.fileName
-	form.rawText = data.parsed.rawText
+// Copy a resume into the form (copies, so edits don't touch the saved resume until Save)
+function fillForm(resume: Resume) {
+	form.fileName = resume.fileName
+	form.rawText = resume.rawText
 
 	form.contact = {
-		name: data.parsed.contact.name || '',
-		email: data.parsed.contact.email || '',
-		phone: data.parsed.contact.phone || '',
-		location: data.parsed.contact.location || '',
-		links: [...data.parsed.contact.links],
+		name: resume.contact.name || '',
+		email: resume.contact.email || '',
+		phone: resume.contact.phone || '',
+		location: resume.contact.location || '',
+		links: [...resume.contact.links],
 	}
 
-	form.summary = data.parsed.summary || ''
-	form.skills = [...data.parsed.skills]
+	form.summary = resume.summary || ''
+	form.skills = [...resume.skills]
 
-	form.experience = data.parsed.experience.map((e) => ({
+	form.experience = resume.experience.map((e) => ({
 		...e,
 		bullets: e.bullets.length ? [...e.bullets] : [''],
 	}))
 
-	form.education = data.parsed.education.map((e) => ({ ...e }))
+	form.education = resume.education.map((e) => ({ ...e }))
 
-	form.projects = data.parsed.projects.map((p) => ({
+	form.projects = resume.projects.map((p) => ({
 		...p,
 		technologies: [...p.technologies],
 		bullets: p.bullets.length ? [...p.bullets] : [''],
 	}))
 
-	form.certifications = [...data.parsed.certifications]
+	form.certifications = [...resume.certifications]
+}
 
+if (existing) {
+	fillForm(existing)
+	const requested = Number(route.query.step)
+	step.value = Number.isInteger(requested) && requested >= 0 && requested < STEPS.length ? requested : 1
+}
+
+// A profile Edit link can name the block it came for (?focus=skills, ?focus=phone):
+// scroll to it and flash a highlight (the .section-focus style in main.css)
+const FOCUS_HIGHLIGHT_MS = 2500
+
+onMounted(async () => {
+	const focus = editing && typeof route.query.focus === 'string' ? route.query.focus : ''
+	if (!/^[a-z]+$/.test(focus)) return
+	await nextTick()
+
+	// Sections carry data-section; contact fields are found by their input id
+	const input = document.getElementById(`contact-${focus}`)
+	const target = document.querySelector(`[data-section="${focus}"]`) ?? input?.parentElement
+	if (!target) return
+
+	target.scrollIntoView({ block: 'center' })
+	target.classList.add('section-focus')
+	setTimeout(() => target.classList.remove('section-focus'), FOCUS_HIGHLIGHT_MS)
+	input?.focus({ preventScroll: true })
+})
+
+// Populate form with real ingested & parsed data after upload
+function onFileParsed(data: { fileName: string; rawText: string; parsed: Resume }) {
+	fillForm(data.parsed)
+	replacedFile = true
 	step.value = 1
 }
 
@@ -83,11 +122,14 @@ function back() {
 }
 
 function finish() {
+	// Editing without a new upload updates the saved resume in place
+	const kept = existing && !replacedFile ? existing : null
+
 	// Build the full Resume object
 	const resume: Resume = {
-		id: crypto.randomUUID(),
+		id: kept?.id ?? crypto.randomUUID(),
 		fileName: form.fileName || 'uploaded-resume.pdf',
-		uploadedAt: new Date().toISOString(),
+		uploadedAt: kept?.uploadedAt ?? new Date().toISOString(),
 		rawText: form.rawText,
 		contact: { ...form.contact, links: [...form.contact.links] },
 		summary: form.summary || undefined,
@@ -104,7 +146,8 @@ function finish() {
 			titles: form.experience.map((e) => e.title).filter(Boolean),
 			keywords: [...form.skills.slice(0, 10)],
 			location: form.contact.location,
-			seniority: 'entry',
+			seniority: kept?.searchProfile.seniority ?? 'entry',
+			remotePreference: kept?.searchProfile.remotePreference,
 		},
 	}
 
@@ -115,7 +158,7 @@ function finish() {
 		auth.signup(form.contact.email || 'demo@gigglide.com', 'demo-password')
 	}
 
-	router.push('/')
+	router.push(editing ? '/profile' : '/')
 }
 </script>
 
@@ -126,6 +169,16 @@ function finish() {
 	>
 		<!-- Top bar -->
 		<header class="shrink-0 border-b border-border/50 bg-surface/60 px-6 pb-4 pt-6 backdrop-blur">
+			<!-- Edit mode: leave without saving -->
+			<div v-if="editing" class="mx-auto mb-4 flex w-full max-w-md items-center justify-between">
+				<span class="text-sm font-semibold text-neutral-100">Edit profile</span>
+				<RouterLink
+					to="/profile"
+					class="text-sm font-medium text-muted transition-colors hover:text-neutral-200"
+				>
+					Cancel
+				</RouterLink>
+			</div>
 			<StepIndicator :steps="STEPS" :current="step" />
 		</header>
 
@@ -201,7 +254,7 @@ function finish() {
 					class="flex-1 rounded-xl bg-accent py-3 text-sm font-semibold text-page shadow-md shadow-accent/20 transition-all hover:bg-accent-soft hover:shadow-accent-soft/25 active:scale-[0.98]"
 					@click="finish"
 				>
-					Save & Start Swiping
+					{{ editing ? 'Save changes' : 'Save & Start Swiping' }}
 				</button>
 			</div>
 		</footer>
