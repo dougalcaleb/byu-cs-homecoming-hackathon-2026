@@ -7,9 +7,9 @@
 				Job hunting, <span class="text-accent">minus the grind.</span>
 			</h1>
 			<p class="leading-relaxed text-neutral-300">
-				Gig Glide is a dating app for job openings. Instead of scrolling through endless listings, you upload your
-				resume once and swipe through postings picked for you: right if it sounds like a fit, left if it
-				doesn't. The more you swipe, the better the picks get.
+				Gig Glide focuses on helping you improve the quality of your applications rather than blindly increasing volume.
+				Built with a constantly learning recommendation algorithm and a profile analyzer, your resumes will be far more
+				tailored to each job you apply for, with minimal extra effort.
 			</p>
 		</header>
 
