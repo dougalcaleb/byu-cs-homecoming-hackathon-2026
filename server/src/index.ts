@@ -1,10 +1,11 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import type { CandidatesRequest, CandidatesResponse } from '../../shared/types'
+import type { RecommendationsRequest } from '../../shared/types'
 import { BOARDS } from './boards'
-import { findCandidates } from './candidates'
 import { getPool } from './pool'
 import { activeSearchProvider } from './providers'
+import { indexInBackground, indexStatus } from './rank/embeddings'
+import { recommend } from './rank/recommend'
 
 try {
 	process.loadEnvFile()
@@ -14,8 +15,12 @@ try {
 
 const app = new Hono()
 
-app.get('/api/health', (c) =>
-	c.json({ ok: true, searchProvider: activeSearchProvider()?.name ?? null }),
+app.get('/api/health', async (c) =>
+	c.json({
+		ok: true,
+		searchProvider: activeSearchProvider()?.name ?? null,
+		embeddings: indexStatus(await getPool()),
+	}),
 )
 
 // Debug view of what the pool holds
@@ -26,23 +31,28 @@ app.get('/api/jobs/pool', async (c) => {
 	return c.json({ total: pool.length, boards: BOARDS.length, byCompany })
 })
 
-app.post('/api/jobs/candidates', async (c) => {
-	const body = await c.req.json<CandidatesRequest>().catch(() => null)
+app.post('/api/jobs/recommendations', async (c) => {
+	const body = await c.req.json<RecommendationsRequest>().catch(() => null)
 	if (
 		!body?.profile ||
 		!Array.isArray(body.profile.titles) ||
-		!Array.isArray(body.profile.keywords)
+		!Array.isArray(body.profile.keywords) ||
+		!Array.isArray(body.skills)
 	) {
 		return c.json(
-			{ error: 'Expected { profile: { titles: string[], keywords: string[] } }' },
+			{
+				error: 'Expected { profile: { titles: string[], keywords: string[] }, skills: string[] }',
+			},
 			400,
 		)
 	}
-	return c.json({ jobs: await findCandidates(body) } satisfies CandidatesResponse)
+	// Picks up postings added by a pool refresh
+	void getPool().then(indexInBackground)
+	return c.json(await recommend(body))
 })
 
-// Warm the pool so the first request does not wait on ~50 board fetches
-void getPool()
+// Warm the pool and the embedding index so the first request does not wait on them
+void getPool().then(indexInBackground)
 
 const port = Number(process.env.PORT ?? 8787)
 serve({ fetch: app.fetch, port }, () => console.log(`Server on http://localhost:${port}`))
