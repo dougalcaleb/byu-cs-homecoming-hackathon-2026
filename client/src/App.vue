@@ -10,15 +10,23 @@ watch(() => route.fullPath, () => (menuOpen.value = false))
 </script>
 
 <template>
-	<AppSidebar :open="menuOpen" @close="menuOpen = false" />
+	<!-- Full-screen routes (splash, login, onboarding) render without shell -->
+	<template v-if="route.meta.fullScreen">
+		<RouterView />
+	</template>
 
-	<!-- Content fills the width beside the sidebar; individual views decide their own width -->
-	<div class="lg:pl-64">
-		<div class="flex min-h-dvh w-full flex-col">
-			<AppHeader @menu="menuOpen = true" />
-			<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<RouterView />
-			</main>
+	<!-- Normal routes get sidebar + header -->
+	<template v-else>
+		<AppSidebar :open="menuOpen" @close="menuOpen = false" />
+
+		<!-- Content fills the width beside the sidebar; individual views decide their own width -->
+		<div class="lg:pl-64">
+			<div class="flex min-h-dvh w-full flex-col">
+				<AppHeader @menu="menuOpen = true" />
+				<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
+					<RouterView />
+				</main>
+			</div>
 		</div>
-	</div>
+	</template>
 </template>
