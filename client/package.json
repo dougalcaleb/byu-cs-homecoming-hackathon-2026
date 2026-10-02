@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "docx": "^9.8.1",
     "mammoth": "^1.13.0",
     "pdfjs-dist": "^6.3.289",
     "pinia": "^4.0.3",

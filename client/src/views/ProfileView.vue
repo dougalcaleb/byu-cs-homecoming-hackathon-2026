@@ -291,6 +291,52 @@
 				</ul>
 			</ProfileSection>
 
+			<!-- Export Resume as Word Document -->
+			<div
+				class="rise flex flex-col items-start justify-between gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+				style="animation-delay: 450ms"
+			>
+				<div class="space-y-0.5">
+					<p class="text-sm font-semibold text-neutral-100">Export Resume</p>
+					<p class="text-xs text-muted">
+						Download your current in-app edited resume as a Word document (.docx) to format it yourself.
+					</p>
+				</div>
+				<button
+					type="button"
+					:disabled="isExporting"
+					@click="handleExport"
+					class="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-page shadow-md shadow-accent/25 transition-all hover:bg-accent-soft active:scale-95 disabled:pointer-events-none disabled:opacity-60"
+				>
+					<svg
+						v-if="!isExporting"
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+						<polyline points="7 10 12 15 17 10" />
+						<line x1="12" y1="15" x2="12" y2="3" />
+					</svg>
+					<svg
+						v-else
+						class="size-4 animate-spin"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+					</svg>
+					<span>{{ isExporting ? 'Exporting...' : 'Export Word Doc' }}</span>
+				</button>
+			</div>
+
 			<p class="px-1 pb-2 text-xs text-muted">
 				From {{ resume.fileName }} &middot; uploaded {{ uploadedOn }} &middot;
 				<RouterLink :to="editLink(0)" class="text-accent/80 hover:text-accent">
@@ -302,12 +348,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import ScoreRing from '@/components/improve/ScoreRing.vue'
 import ProfileSection from '@/components/profile/ProfileSection.vue'
+import { exportResumeToDocx } from '@/lib/exportDocx'
 import { findTech } from '@/lib/techStack'
 import { useResumeStore } from '@/stores/resume'
 import type { Experience } from '@/types'
+
+const isExporting = ref(false)
+
+async function handleExport() {
+	if (!resume.value || isExporting.value) return
+	isExporting.value = true
+	try {
+		await exportResumeToDocx(resume.value)
+	} catch (err) {
+		console.error('Failed to export resume as Word doc:', err)
+	} finally {
+		isExporting.value = false
+	}
+}
 
 type ChipKind = 'email' | 'phone' | 'link'
 

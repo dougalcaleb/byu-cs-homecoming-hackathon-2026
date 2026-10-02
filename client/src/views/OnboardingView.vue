@@ -144,7 +144,7 @@ function finish() {
 		certifications: [...form.certifications],
 		searchProfile: {
 			titles: form.experience.map((e) => e.title).filter(Boolean),
-			keywords: [...form.skills.slice(0, 10)],
+			keywords: form.skills.slice(0, 10),
 			location: form.contact.location,
 			seniority: kept?.searchProfile.seniority ?? 'entry',
 			remotePreference: kept?.searchProfile.remotePreference,
