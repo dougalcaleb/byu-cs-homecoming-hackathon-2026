@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
 
+interface ImportMetaEnv {
+	/** logo.dev publishable key (pk_...) */
+	readonly VITE_LOGO_DEV_TOKEN?: string
+}
+
 declare module 'mammoth' {
 	interface ExtractRawTextOptions {
 		arrayBuffer?: ArrayBuffer

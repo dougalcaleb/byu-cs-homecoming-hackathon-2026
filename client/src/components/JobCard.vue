@@ -1,8 +1,7 @@
 <template>
 	<!-- Positioned by the parent (left-0 / left-full) so the same card can sit in the current or the next slot -->
 	<div class="absolute inset-y-0 w-full touch-pan-y select-none overflow-hidden border-x border-border bg-surface">
-		<img src="/handsome.png" :alt="`${job.company} cover image`" draggable="false"
-			class="pointer-events-none absolute inset-0 size-full object-cover object-top" />
+		<JobCardCover :job="job" class="pointer-events-none" />
 
 		<div class="absolute inset-x-0 top-0 bg-linear-to-b from-black to-transparent px-4 pt-4 pb-12">
 			<h1 class="text-3xl font-semibold drop-shadow-xl">{{ job.company }}</h1>
@@ -17,6 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import JobCardCover from '@/components/JobCardCover.vue'
 import JobCardFooter from '@/components/JobCardFooter.vue'
 import { extractTechStack } from '@/lib/techStack'
 import { useMatchesStore } from '@/stores/matches'

@@ -3,9 +3,8 @@
 	<div v-if="job" ref="column" class="relative mx-auto flex w-full max-w-md flex-1">
 		<HeartBubbles :column="column" />
 
-		<!-- Page background: a blurred, dimmed copy of the image -->
-		<img src="/handsome.png" alt="" aria-hidden="true"
-			class="pointer-events-none fixed inset-0 -z-10 size-full scale-110 object-cover blur-3xl" />
+		<!-- Page background: the current job's brand gradient, blurred and dimmed -->
+		<div class="pointer-events-none fixed inset-0 -z-10 scale-110 blur-3xl" :style="{ background: coverBackground(job.company) }" />
 		<div class="pointer-events-none fixed inset-0 -z-10 bg-black/80" />
 
 		<template v-if="!liked">
@@ -54,6 +53,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import JobDetails from '@/components/JobDetails.vue'
 import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
+import { coverBackground, prefetchBrand } from '@/lib/brand'
 import { mockJobs, mockMatches } from '@/mocks'
 import { useJobsStore } from '@/stores/jobs'
 import { useMatchesStore } from '@/stores/matches'
@@ -79,6 +79,13 @@ const job = computed(() => jobsStore.deck[0])
 
 // The job after the current one (wraps to the first listing, matching refillQueue)
 const nextJob = computed(() => jobsStore.deck[1] ?? jobsStore.all[0])
+
+// Prefetch every queued job's logo up front, so cards never wait on the network when they come into view
+watch(
+	() => jobsStore.all,
+	(jobs) => jobs.forEach((queued) => prefetchBrand(queued.company)),
+	{ immediate: true },
+)
 
 // ---------- Layout ----------
 
