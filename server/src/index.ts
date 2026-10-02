@@ -55,4 +55,9 @@ app.post('/api/jobs/recommendations', async (c) => {
 void getPool().then(indexInBackground)
 
 const port = Number(process.env.PORT ?? 8787)
-serve({ fetch: app.fetch, port }, () => console.log(`Server on http://localhost:${port}`))
+// overrideGlobalObjects: Hono otherwise replaces global Request/Response with its own classes,
+// which breaks `instanceof Response` checks in other libraries. transformers.js then silently
+// skips caching the downloaded model and fails with "Unable to get model file path or buffer".
+serve({ fetch: app.fetch, port, overrideGlobalObjects: false }, () =>
+	console.log(`Server on http://localhost:${port}`),
+)
