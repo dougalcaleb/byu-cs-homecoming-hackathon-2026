@@ -8,9 +8,11 @@
 			Like &rsaquo;
 		</span>
 
-		<section class="relative flex-1 overflow-hidden">
+		<section ref="viewport" class="relative flex-1 overflow-hidden">
 			<!-- Always rendered underneath the card so it is revealed as the card slides right (hidden when dragging left) -->
-			<JobDetails :job="job" class="absolute inset-0" :class="{ invisible: dragX < 0 }" :inert="!liked" @back="resetCard" />
+			<JobDetails :job="job" class="absolute inset-0 touch-pan-y" :class="{ invisible: dragX < 0 }" :inert="!liked"
+				@back="resetCard" @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerEnd"
+				@pointercancel="onPointerEnd" />
 
 			<div class="absolute inset-0 touch-pan-y select-none" :class="{ 'transition-transform duration-200': !dragging, 'pointer-events-none': liked }"
 				:style="cardStyle" @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerEnd"
@@ -66,6 +68,10 @@ const match = computed(() => {
 
 const SWIPE_THRESHOLD = 100 // px of horizontal drag needed to count as a swipe
 
+// How far the card must travel to be fully out of the section
+const viewport = ref<HTMLElement | null>(null)
+const offscreen = () => viewport.value?.clientWidth ?? window.innerWidth
+
 const dragX = ref(0)
 const dragging = ref(false)
 const liked = ref(false) // card swiped right; details are showing
@@ -76,18 +82,30 @@ const cardStyle = computed(() => ({
 }))
 
 function onPointerDown(event: PointerEvent) {
+	// On the details view, only empty space (the container itself, not its content) starts a swipe back
+	if (liked.value && event.target !== event.currentTarget) return
 	dragging.value = true
 	startX = event.clientX - dragX.value
 	;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
 }
 
 function onPointerMove(event: PointerEvent) {
-	if (dragging.value) dragX.value = event.clientX - startX
+	if (!dragging.value) return
+	const x = event.clientX - startX
+	// Details view: the card can only be dragged back in (left), never further right
+	dragX.value = liked.value ? Math.max(0, Math.min(x, offscreen())) : x
 }
 
 function onPointerEnd() {
 	if (!dragging.value) return
 	dragging.value = false
+
+	if (liked.value) {
+		// Swipe back: pull the card back in, or settle off screen again
+		if (dragX.value < offscreen() - SWIPE_THRESHOLD) resetCard()
+		else dragX.value = offscreen()
+		return
+	}
 
 	if (Math.abs(dragX.value) < SWIPE_THRESHOLD) {
 		dragX.value = 0
@@ -98,12 +116,12 @@ function onPointerEnd() {
 	if (dragX.value > 0) {
 		// Swipe right: fly off to reveal the details underneath
 		liked.value = true
-		dragX.value = window.innerWidth
+		dragX.value = offscreen()
 		return
 	}
 
 	// Swipe left: fly off, react, then snap back (placeholder until the deck advances)
-	dragX.value = -window.innerWidth
+	dragX.value = -offscreen()
 	setTimeout(() => {
 		alert('Swiped left (pass)')
 		dragging.value = true // snap back without animating

@@ -1,6 +1,6 @@
 <template>
 	<div class="flex flex-col gap-5 overflow-y-auto p-4">
-		<button class="self-end text-sm text-accent-soft" @click="emit('back')">Back &rsaquo;</button>
+		<button class="cursor-pointer self-end text-sm text-accent-soft" @click="emit('back')">Back &rsaquo;</button>
 
 		<header>
 			<h2 class="text-2xl font-semibold">{{ job.title }}</h2>
