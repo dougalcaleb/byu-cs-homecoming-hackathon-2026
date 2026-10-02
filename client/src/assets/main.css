@@ -1,11 +1,13 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-surface: #0a0a0a;
-  --color-card: #171717;
-  --color-border: #262626;
-  --color-muted: #a3a3a3;
-  --color-accent: #8b5cf6;
+  --color-page: #121417;
+  --color-surface: #1a1d21;
+  --color-card: #22262b;
+  --color-border: #2f343b;
+  --color-muted: #9aa3ad;
+  --color-accent: #3b9eff;
+  --color-accent-soft: #7cbcff;
 }
 
 @layer base {
@@ -13,6 +15,6 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-black text-neutral-100 antialiased;
+    @apply bg-page text-neutral-100 antialiased;
   }
 }
