@@ -234,3 +234,30 @@ export interface RecommendationsResponse {
 	recommendations: Recommendation[]
 	taste: TasteSummary
 }
+
+// ---------- History ----------
+
+// One row of the swipe history: a snapshot of the job (so the row still reads well if the posting
+// later leaves the pool) and the latest swipe on it. One row per user and job; swiping a job again
+// replaces its row.
+export interface HistoryEntry {
+	jobId: string
+	company: string
+	title: string
+	direction: SwipeDirection
+	// ISO 8601
+	swipedAt: string
+}
+
+// POST /api/history
+export interface RecordHistoryRequest {
+	// Who swiped (the signed-in email). The app has no server-side accounts yet.
+	user: string
+	entry: HistoryEntry
+}
+
+// GET /api/history?user=...
+export interface HistoryResponse {
+	// Newest first
+	entries: HistoryEntry[]
+}

@@ -1,8 +1,13 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
-import type { RecommendationsRequest } from '../../shared/types'
+import type {
+	HistoryResponse,
+	RecommendationsRequest,
+	RecordHistoryRequest,
+} from '../../shared/types'
 import { BOARDS } from './boards'
 import { jobsById } from './candidates'
+import { listHistory, recordSwipe } from './history'
 import { getPool } from './pool'
 import { activeSearchProvider } from './providers'
 import { indexInBackground, indexStatus } from './rank/embeddings'
@@ -36,6 +41,36 @@ app.get('/api/jobs/pool', async (c) => {
 app.get('/api/jobs/:id', async (c) => {
 	const job = (await jobsById()).get(c.req.param('id'))
 	return job ? c.json(job) : c.json({ error: 'Job not found' }, 404)
+})
+
+// Swipe history (SQLite). One row per user and job; the latest swipe wins.
+app.get('/api/history', (c) => {
+	const user = c.req.query('user')
+	if (!user) return c.json({ error: 'Expected ?user=<email>' }, 400)
+	return c.json<HistoryResponse>({ entries: listHistory(user) })
+})
+
+app.post('/api/history', async (c) => {
+	const body = await c.req.json<RecordHistoryRequest>().catch(() => null)
+	const entry = body?.entry
+	if (
+		!body?.user ||
+		!entry?.jobId ||
+		!entry.company ||
+		!entry.title ||
+		(entry.direction !== 'like' && entry.direction !== 'pass') ||
+		Number.isNaN(Date.parse(entry.swipedAt))
+	) {
+		return c.json(
+			{
+				error:
+					'Expected { user, entry: { jobId, company, title, direction: "like" | "pass", swipedAt: ISO date } }',
+			},
+			400,
+		)
+	}
+	recordSwipe(body.user, entry)
+	return c.json({ ok: true })
 })
 
 app.post('/api/jobs/recommendations', async (c) => {

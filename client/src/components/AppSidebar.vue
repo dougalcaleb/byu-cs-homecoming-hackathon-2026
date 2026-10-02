@@ -8,6 +8,7 @@ const logosEnabled = !!import.meta.env.VITE_LOGO_DEV_TOKEN
 
 const links = [
 	{ to: '/', label: 'Match' },
+	{ to: '/history', label: 'History' },
 	{ to: '/profile', label: 'Profile' },
 	{ to: '/about', label: 'About' },
 ]

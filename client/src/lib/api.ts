@@ -1,4 +1,11 @@
-import type { JobPosting, RecommendationsRequest, RecommendationsResponse } from '@/types'
+import type {
+	HistoryEntry,
+	HistoryResponse,
+	JobPosting,
+	RecommendationsRequest,
+	RecommendationsResponse,
+	RecordHistoryRequest,
+} from '@/types'
 
 export async function fetchRecommendations(
 	request: RecommendationsRequest,
@@ -18,4 +25,22 @@ export async function fetchJob(id: string): Promise<JobPosting | null> {
 	if (response.status === 404) return null
 	if (!response.ok) throw new Error(`Job lookup failed (${response.status})`)
 	return (await response.json()) as JobPosting
+}
+
+/** Save a swipe to the user's history (the server keeps the latest swipe per job). */
+export async function recordHistory(user: string, entry: HistoryEntry): Promise<void> {
+	const body: RecordHistoryRequest = { user, entry }
+	const response = await fetch('/api/history', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+	})
+	if (!response.ok) throw new Error(`Saving history failed (${response.status})`)
+}
+
+/** The user's swipe history, newest first. */
+export async function fetchHistory(user: string): Promise<HistoryEntry[]> {
+	const response = await fetch(`/api/history?user=${encodeURIComponent(user)}`)
+	if (!response.ok) throw new Error(`Loading history failed (${response.status})`)
+	return ((await response.json()) as HistoryResponse).entries
 }

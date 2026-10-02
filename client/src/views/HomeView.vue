@@ -63,12 +63,15 @@ import HeartBubbles from '@/components/HeartBubbles.vue'
 import JobCard from '@/components/JobCard.vue'
 import { coverBackground, prefetchBrand } from '@/lib/brand'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchJob, fetchRecommendations } from '@/lib/api'
+import { fetchJob, fetchRecommendations, recordHistory } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth'
 import { useJobsStore } from '@/stores/jobs'
 import { useResumeStore } from '@/stores/resume'
+import type { JobPosting, SwipeDirection } from '@/types'
 
 const jobsStore = useJobsStore()
 const resumeStore = useResumeStore()
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -118,6 +121,22 @@ const job = computed(() => jobsStore.deck[0])
 
 // The job after the current one, prerendered so it can slide in
 const nextJob = computed(() => jobsStore.deck[1])
+
+// ---------- History ----------
+
+// Saves a swipe to the user's history on the server. Fire and forget: the deck must never wait on it or
+// break because of it.
+function logSwipe(swiped: JobPosting, direction: SwipeDirection) {
+	const user = authStore.currentEmail
+	if (!user) return
+	recordHistory(user, {
+		jobId: swiped.id,
+		company: swiped.company,
+		title: swiped.title,
+		direction,
+		swipedAt: new Date().toISOString(),
+	}).catch(() => {})
+}
 
 // ---------- Links to a job (URL fragment) ----------
 
@@ -234,7 +253,10 @@ function finishPass() {
 	clearTimeout(passTimer)
 	passTimer = undefined
 
-	if (job.value) jobsStore.swipe(job.value.id, 'pass')
+	if (job.value) {
+		jobsStore.swipe(job.value.id, 'pass')
+		logSwipe(job.value, 'pass')
+	}
 	// The next card is now the current one and is already in view; snap the strip back without animating
 	dragging.value = true
 	dragX.value = 0
@@ -300,6 +322,7 @@ function onPointerEnd() {
 
 	if (dragX.value > 0) {
 		// Swipe right: reveal the details
+		if (job.value) logSwipe(job.value, 'like')
 		liked.value = true
 		dragX.value = likedOffset()
 		return
